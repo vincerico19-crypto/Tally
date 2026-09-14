@@ -1493,21 +1493,37 @@ tailwind.config = {
       const share = spent > 0 ? (c.total / spent) * 100 : 0;
       const st = catStyle(c.name);
       const cb = catBudget(c.name);
-      const pct = cb > 0 ? (c.total / cb) * 100 : share;
-      const ringCol = cb > 0 ? budgetColor(pct) : st.color;
-      const left = cb - c.total;
-      const sub = cb > 0
-        ? `<span style="color:${ringCol}">${Math.round(pct)}% used</span><span class="text-muted"> · ${left >= 0 ? money(left) + ' left' : money(-left) + ' over'}</span>`
-        : `<span class="text-muted">${c.n} transaction${c.n === 1 ? '' : 's'} · ${Math.round(share)}% of the month</span>`;
+      const w = top > 0 ? (c.total / top) * 100 : 0;
+
+      // With a budget: a ring meter and the dollars left.
+      if (cb > 0) {
+        const pct = (c.total / cb) * 100;
+        const col = budgetColor(pct);
+        const left = cb - c.total;
+        return `<button class="w-full text-left px-4 py-3 active:bg-page" data-cat="${esc(c.name)}">
+          <div class="flex items-center gap-3">
+            ${ringChip(c.name, pct, col, 44)}
+            <div class="min-w-0 flex-1">
+              <p class="text-[15px] font-medium truncate">${esc(c.name)}</p>
+              <p class="num text-[12px] mt-0.5 truncate"><span style="color:${col}">${Math.round(pct)}% used</span><span class="text-muted"> · ${left >= 0 ? money(left) + ' left' : money(-left) + ' over'}</span></p>
+            </div>
+            <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
+            <svg class="shrink-0 text-muted -mr-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </button>`;
+      }
+
+      // Without one: the icon and a bar showing its share of the month.
       return `<button class="w-full text-left px-4 py-3 active:bg-page" data-cat="${esc(c.name)}">
         <div class="flex items-center gap-3">
-          ${ringChip(c.name, pct, ringCol, 44)}
-          <div class="min-w-0 flex-1">
-            <p class="text-[15px] font-medium truncate">${esc(c.name)}</p>
-            <p class="num text-[12px] mt-0.5 truncate">${sub}</p>
-          </div>
+          ${catChip(c.name, 30)}
+          <span class="text-[15px] font-medium truncate flex-1">${esc(c.name)}</span>
           <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
-          <svg class="shrink-0 text-muted -mr-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          <svg class="shrink-0 text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="mt-2 flex items-center gap-2.5 pl-[42px]">
+          <div class="flex-1 h-1.5 rounded-full bg-page overflow-hidden"><div class="h-full rounded-full" style="width:${w.toFixed(1)}%;background:${st.color}"></div></div>
+          <span class="num text-[12px] text-muted shrink-0">${c.n} · ${Math.round(share)}%</span>
         </div>
       </button>`;
     }).join('');
