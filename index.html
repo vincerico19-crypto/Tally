@@ -1489,6 +1489,7 @@ tailwind.config = {
           <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:${cb > 0 ? barCol + '33' : '#0E1317'}"><div class="h-full rounded-full" style="width:${barPct.toFixed(1)}%;background:${barCol}"></div></div>
           ${tail}
         </div>
+        ${cb > 0 ? `<p class="num text-[12px] font-semibold mt-1.5 pl-[42px]" style="color:${c.total > cb ? '#E2614A' : '#35C08A'}">${c.total <= cb ? money(cb - c.total) + ' left' : money(c.total - cb) + ' over'}</p>` : ''}
       </button>`;
     }).join('');
   }
