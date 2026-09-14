@@ -84,45 +84,45 @@ tailwind.config = {
   <section class="bg-card rounded-2xl border border-line p-5">
     <div class="flex items-end justify-between gap-4">
       <div>
-        <p class="text-[14px] text-muted">Spent</p>
-        <p id="spentBig" class="num text-[40px] leading-none font-semibold tracking-tight mt-1">$0.00</p>
+        <p class="text-[15px] text-muted">Spent</p>
+        <p id="spentBig" class="num text-[42px] leading-none font-semibold tracking-tight mt-1">$0.00</p>
       </div>
       <button id="editBudget" class="text-right active:opacity-60">
-        <p class="text-[14px] text-muted">Budget</p>
-        <p id="budgetBig" class="num text-[22px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">$0.00</p>
+        <p class="text-[15px] text-muted">Budget</p>
+        <p id="budgetBig" class="num text-[24px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">$0.00</p>
       </button>
     </div>
     <div id="meterTrack" class="mt-4 h-3 rounded-full overflow-hidden bg-page">
       <div id="meterFill" class="meter-fill h-full w-0 bg-ledger rounded-full"></div>
     </div>
-    <div class="mt-3 flex items-baseline justify-between text-[15px]">
+    <div class="mt-3.5 flex items-baseline justify-between text-[16px]">
       <p id="meterStatus" class="font-semibold text-ledger">Set a budget to start tracking</p>
       <p id="meterPct" class="num text-muted">0%</p>
     </div>
-    <p id="paceLine" class="hidden num text-[14px] mt-2.5 pt-3 border-t border-line"></p>
-    <div id="incomeRow" class="hidden mt-4 pt-3.5 border-t border-line items-center justify-between text-[15px]">
+    <p id="paceLine" class="hidden num text-[15px] mt-3 pt-3.5 border-t border-line"></p>
+    <div id="incomeRow" class="hidden mt-4 pt-4 border-t border-line items-center justify-between text-[16px]">
       <span class="text-muted">Money in this month</span>
-      <span id="incomeAmt" class="num text-[17px] font-semibold text-income">$0.00</span>
+      <span id="incomeAmt" class="num text-[19px] font-semibold text-income">$0.00</span>
     </div>
   </section>
 
   <section class="mt-4 bg-card rounded-2xl border border-line p-5">
     <div class="flex items-end justify-between gap-4">
       <div>
-        <p class="text-[14px] text-muted flex items-center gap-1.5"><span id="leftIcon"></span>Left after everything</p>
-        <p id="leftBig" class="num text-[34px] leading-none font-semibold tracking-tight mt-1.5">$0.00</p>
+        <p class="text-[15px] text-muted flex items-center gap-1.5"><span id="leftIcon"></span>Left after everything</p>
+        <p id="leftBig" class="num text-[36px] leading-none font-semibold tracking-tight mt-1.5">$0.00</p>
       </div>
       <button id="editIncome" class="text-right active:opacity-60">
-        <p class="text-[14px] text-muted">Monthly income</p>
-        <p id="incomeBig" class="num text-[22px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">Set</p>
+        <p class="text-[15px] text-muted">Monthly income</p>
+        <p id="incomeBig" class="num text-[24px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">Set</p>
       </button>
     </div>
-    <div class="mt-4 pt-3.5 border-t border-line space-y-2.5 text-[15px]">
+    <div class="mt-4 pt-4 border-t border-line space-y-3 text-[16px]">
       <div class="flex justify-between"><span class="text-muted">Income you expect</span><span id="rowIncome" class="num font-semibold">$0.00</span></div>
       <div id="rowDepositWrap" class="hidden justify-between"><span class="text-muted">Deposits you pasted</span><span id="rowDeposit" class="num font-semibold text-income">$0.00</span></div>
       <div class="flex justify-between"><span class="text-muted">Spent</span><span id="rowSpent" class="num font-semibold">$0.00</span></div>
       <div id="rowMovedWrap" class="hidden justify-between"><span class="text-muted">Card payments &amp; transfers</span><span id="rowMoved" class="num font-semibold text-muted">$0.00</span></div>
-      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="font-medium">In the bank</span><span id="rowBank" class="num text-[17px] font-semibold">$0.00</span></div>
+      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="font-semibold">In the bank</span><span id="rowBank" class="num text-[19px] font-semibold">$0.00</span></div>
     </div>
   </section>
 
