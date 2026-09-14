@@ -122,6 +122,7 @@ tailwind.config = {
       <div id="rowDepositWrap" class="hidden justify-between"><span class="text-muted">Deposits you pasted</span><span id="rowDeposit" class="num font-medium text-income">$0.00</span></div>
       <div class="flex justify-between"><span class="text-muted">Spent</span><span id="rowSpent" class="num font-medium">$0.00</span></div>
       <div id="rowMovedWrap" class="hidden justify-between"><span class="text-muted">Card payments &amp; transfers</span><span id="rowMoved" class="num font-medium text-muted">$0.00</span></div>
+      <div id="rowBankWrap" class="hidden justify-between pt-2 mt-1 border-t border-line"><span id="rowBankLabel" class="text-muted">In the bank</span><span id="rowBank" class="num font-semibold">$0.00</span></div>
     </div>
   </section>
 
@@ -566,7 +567,7 @@ tailwind.config = {
   /* Moving your own money is not spending. A card payment from checking is the
      same dollars you already logged as charges on the card — counting both
      would double your month. These get flagged and kept out of the totals. */
-  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc)\b/i;
+  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer)\b/i;
   function looksLikeTransfer(text) {
     if (/\bpayroll|direct dep|paycheck\b/i.test(text)) return false;   // that is real income
     return XFER_HINTS.test(text);
@@ -1203,6 +1204,20 @@ tailwind.config = {
     if (income > 0) { dw.classList.remove('hidden'); dw.classList.add('flex'); $('rowDeposit').textContent = (settings.countDeposits ? '+' : '') + money(income); }
     else { dw.classList.add('hidden'); dw.classList.remove('flex'); }
     $('leftIcon').innerHTML = iconSvg('inflow', left0(moneyIn - spent) ? '#E2614A' : '#35C08A', 14);
+    // What is actually sitting in the primary account, next to the budget maths
+    const bw = $('rowBankWrap');
+    const primary = settings.primaryAcct;
+    const bankInfo = primary ? (accounts[primary] || {}) : {};
+    if (primary && bankInfo.asOf) {
+      const now = balanceDetail(primary).now;
+      bw.classList.remove('hidden'); bw.classList.add('flex');
+      $('rowBankLabel').textContent = 'In ' + primary + ' now';
+      $('rowBank').textContent = money(now);
+      $('rowBank').style.color = now > 0 ? '#35C08A' : '#E2614A';
+    } else {
+      bw.classList.add('hidden'); bw.classList.remove('flex');
+    }
+
     const left = moneyIn - spent;
     const lb = $('leftBig');
     lb.textContent = (setIncome || income) ? money(left) : '—';
@@ -1509,6 +1524,10 @@ tailwind.config = {
             </div>
             <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
             <svg class="shrink-0 text-muted -mr-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="mt-2.5 flex items-center gap-2.5 pl-[56px]">
+            <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:${col}33"><div class="h-full rounded-full" style="width:${Math.min(pct, 100).toFixed(1)}%;background:${col}"></div></div>
+            <span class="num text-[12px] text-muted shrink-0">${money(c.total).replace('.00', '')} / ${money(cb).replace('.00', '')}</span>
           </div>
         </button>`;
       }
