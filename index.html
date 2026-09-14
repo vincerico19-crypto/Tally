@@ -84,45 +84,45 @@ tailwind.config = {
   <section class="bg-card rounded-2xl border border-line p-5">
     <div class="flex items-end justify-between gap-4">
       <div>
-        <p class="text-[15px] text-muted">Spent</p>
-        <p id="spentBig" class="num text-[42px] leading-none font-semibold tracking-tight mt-1">$0.00</p>
+        <p class="text-[14px] text-muted">Spent</p>
+        <p id="spentBig" class="num text-[30px] leading-none font-semibold tracking-tight mt-1">$0.00</p>
       </div>
       <button id="editBudget" class="text-right active:opacity-60">
-        <p class="text-[15px] text-muted">Budget</p>
-        <p id="budgetBig" class="num text-[24px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">$0.00</p>
+        <p class="text-[14px] text-muted">Budget</p>
+        <p id="budgetBig" class="num text-[20px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">$0.00</p>
       </button>
     </div>
     <div id="meterTrack" class="mt-4 h-3 rounded-full overflow-hidden bg-page">
       <div id="meterFill" class="meter-fill h-full w-0 bg-ledger rounded-full"></div>
     </div>
-    <div class="mt-3.5 flex items-baseline justify-between text-[16px]">
+    <div class="mt-3.5 flex items-baseline justify-between text-[15px]">
       <p id="meterStatus" class="font-semibold text-ledger">Set a budget to start tracking</p>
       <p id="meterPct" class="num text-muted">0%</p>
     </div>
-    <p id="paceLine" class="hidden num text-[15px] mt-3 pt-3.5 border-t border-line"></p>
-    <div id="incomeRow" class="hidden mt-4 pt-4 border-t border-line items-center justify-between text-[16px]">
+    <p id="paceLine" class="hidden num text-[14px] mt-3 pt-3.5 border-t border-line"></p>
+    <div id="incomeRow" class="hidden mt-4 pt-4 border-t border-line items-center justify-between text-[15px]">
       <span class="text-muted">Money in this month</span>
-      <span id="incomeAmt" class="num text-[19px] font-semibold text-income">$0.00</span>
+      <span id="incomeAmt" class="num text-[16px] font-semibold text-income">$0.00</span>
     </div>
   </section>
 
   <section class="mt-4 bg-card rounded-2xl border border-line p-5">
     <div class="flex items-end justify-between gap-4">
       <div>
-        <p class="text-[15px] text-muted flex items-center gap-1.5"><span id="leftIcon"></span>Left after everything</p>
-        <p id="leftBig" class="num text-[36px] leading-none font-semibold tracking-tight mt-1.5">$0.00</p>
+        <p class="text-[14px] text-muted flex items-center gap-1.5"><span id="leftIcon"></span>Left after everything</p>
+        <p id="leftBig" class="num text-[30px] leading-none font-semibold tracking-tight mt-1.5">$0.00</p>
       </div>
       <button id="editIncome" class="text-right active:opacity-60">
-        <p class="text-[15px] text-muted">Monthly income</p>
-        <p id="incomeBig" class="num text-[24px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">Set</p>
+        <p class="text-[14px] text-muted">Monthly income</p>
+        <p id="incomeBig" class="num text-[20px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">Set</p>
       </button>
     </div>
-    <div class="mt-4 pt-4 border-t border-line space-y-3 text-[16px]">
+    <div class="mt-4 pt-4 border-t border-line space-y-2.5 text-[15px]">
       <div class="flex justify-between"><span class="text-muted">Income you expect</span><span id="rowIncome" class="num font-semibold">$0.00</span></div>
       <div id="rowDepositWrap" class="hidden justify-between"><span class="text-muted">Deposits you pasted</span><span id="rowDeposit" class="num font-semibold text-income">$0.00</span></div>
       <div class="flex justify-between"><span class="text-muted">Spent</span><span id="rowSpent" class="num font-semibold">$0.00</span></div>
       <div id="rowMovedWrap" class="hidden justify-between"><span class="text-muted">Card payments &amp; transfers</span><span id="rowMoved" class="num font-semibold text-muted">$0.00</span></div>
-      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="font-semibold">In the bank</span><span id="rowBank" class="num text-[19px] font-semibold">$0.00</span></div>
+      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="text-[16px] font-semibold">In the bank</span><span id="rowBank" class="num text-[17px] font-semibold">$0.00</span></div>
     </div>
   </section>
 
@@ -1502,10 +1502,10 @@ tailwind.config = {
         <button class="w-full text-left px-4 py-3 active:bg-page ${n === acctFilter ? 'bg-page/60' : ''}" data-acct="${esc(n)}">
           <div class="flex items-center gap-3">
             <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 17)}</span>
-            <span class="text-[15px] font-medium truncate flex-1">${esc(n)}</span>
-            <span class="num text-[15px] font-semibold shrink-0">${money(map[n].out)}</span>
+            <span class="text-[16px] font-medium truncate flex-1">${esc(n)}</span>
+            <span class="num text-[16px] font-semibold shrink-0">${money(map[n].out)}</span>
           </div>
-          <p class="text-[12px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · ' + money(map[n].paid) + ' paid' : ''}</p>
+          <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · ' + money(map[n].paid) + ' paid' : ''}</p>
           ${utilStrip(n)}
         </button>`).join('');
     }
@@ -1539,10 +1539,10 @@ tailwind.config = {
           <div class="flex items-center gap-3">
             ${ringChip(c.name, pct, col, 44)}
             <div class="min-w-0 flex-1">
-              <p class="text-[15px] font-medium truncate">${esc(c.name)}</p>
-              <p class="num text-[12px] mt-0.5 truncate"><span style="color:${col}">${Math.round(pct)}% used</span><span class="text-muted"> · ${left >= 0 ? money(left) + ' left' : money(-left) + ' over'}</span></p>
+              <p class="text-[16px] font-medium truncate">${esc(c.name)}</p>
+              <p class="num text-[13px] mt-0.5 truncate"><span style="color:${col}">${Math.round(pct)}% used</span><span class="text-muted"> · ${left >= 0 ? money(left) + ' left' : money(-left) + ' over'}</span></p>
             </div>
-            <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
+            <span class="num text-[16px] font-semibold shrink-0">${money(c.total)}</span>
             <svg class="shrink-0 text-muted -mr-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
           </div>
           <div class="mt-2.5 flex items-center gap-2.5 pl-[56px]">
@@ -1556,8 +1556,8 @@ tailwind.config = {
       return `<button class="w-full text-left px-4 py-3 active:bg-page" data-cat="${esc(c.name)}">
         <div class="flex items-center gap-3">
           ${catChip(c.name, 34)}
-          <span class="text-[15px] font-medium truncate flex-1">${esc(c.name)}</span>
-          <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
+          <span class="text-[16px] font-medium truncate flex-1">${esc(c.name)}</span>
+          <span class="num text-[16px] font-semibold shrink-0">${money(c.total)}</span>
           <svg class="shrink-0 text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
         </div>
         <div class="mt-2 flex items-center gap-2.5 pl-[42px]">
@@ -1603,7 +1603,7 @@ tailwind.config = {
       ${catChip(name, 36)}
       <div class="min-w-0">
         <p class="text-[16px] font-semibold truncate">${esc(name)}</p>
-        <p class="num text-[12px] text-muted">${esc(monthShort(viewMonth))} · ${rows.length} transaction${rows.length === 1 ? '' : 's'}</p>
+        <p class="num text-[13px] text-muted">${esc(monthShort(viewMonth))} · ${rows.length} transaction${rows.length === 1 ? '' : 's'}</p>
       </div>`;
 
     // six-month trend, so you can see whether this is a normal month
@@ -1641,7 +1641,7 @@ tailwind.config = {
 
     const stats = `
       <div class="px-5 py-4 border-b border-line">
-        <p class="num text-[34px] leading-none font-semibold tracking-tight" style="color:${st.color}">${money(total)}</p>
+        <p class="num text-[30px] leading-none font-semibold tracking-tight" style="color:${st.color}">${money(total)}</p>
         <p class="text-[13px] text-muted mt-1.5">${Math.round(share)}% of everything you spent this month${rows.length ? ' · ' + money(avg) + ' average' : ''}</p>
         ${biggest ? `<p class="text-[13px] text-muted mt-0.5">Biggest: ${esc(biggest.desc)} at ${money(biggest.amount)}</p>` : ''}
       </div>
@@ -1661,10 +1661,10 @@ tailwind.config = {
       <div class="flex items-center gap-3 px-5 py-3 border-b border-line active:bg-page" data-edit="${t.id}">
         <div class="num w-12 shrink-0 text-[12px] text-muted">${esc(dayLabel(t.date))}</div>
         <div class="min-w-0 flex-1">
-          <p class="text-[15px] font-medium truncate">${esc(t.desc)}</p>
-          ${t.acct && t.acct !== 'Unassigned' ? `<p class="text-[12px] text-muted truncate">${esc(t.acct)}</p>` : ''}
+          <p class="text-[16px] font-medium truncate">${esc(t.desc)}</p>
+          ${t.acct && t.acct !== 'Unassigned' ? `<p class="text-[13px] text-muted truncate">${esc(t.acct)}</p>` : ''}
         </div>
-        <div class="num text-[15px] font-semibold shrink-0">${money(t.amount)}</div>
+        <div class="num text-[16px] font-semibold shrink-0">${money(t.amount)}</div>
         <button data-catdel="${t.id}" aria-label="Delete ${esc(t.desc)}" class="w-8 h-8 -mr-1 shrink-0 grid place-items-center rounded-full text-muted active:bg-page">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
@@ -1703,7 +1703,7 @@ tailwind.config = {
       <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:36px;height:36px;background:${color}2E">${iconSvg(acctIcon(name), color, 20)}</span>
       <div class="min-w-0">
         <p class="text-[16px] font-semibold truncate">${esc(name)}</p>
-        <p class="num text-[12px] text-muted">${esc(monthShort(viewMonth))} · ${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}</p>
+        <p class="num text-[13px] text-muted">${esc(monthShort(viewMonth))} · ${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}</p>
       </div>`;
 
     // Where this account's money went, by category
@@ -1759,7 +1759,7 @@ tailwind.config = {
     const stats = `
       <div class="px-5 py-4 border-b border-line">
         <p class="text-[13px] text-muted">Net for the month</p>
-        <p class="num text-[34px] leading-none font-semibold tracking-tight mt-1 ${net < 0 ? 'text-over' : 'text-income'}">${net >= 0 ? '+' : ''}${money(net)}</p>
+        <p class="num text-[30px] leading-none font-semibold tracking-tight mt-1 ${net < 0 ? 'text-over' : 'text-income'}">${net >= 0 ? '+' : ''}${money(net)}</p>
         <div class="mt-4 space-y-1.5 text-[13px]">
           ${inn ? `<div class="flex justify-between"><span class="text-muted">Money in</span><span class="num font-medium text-income">${money(inn)}</span></div>` : ''}
           <div class="flex justify-between"><span class="text-muted">Spent</span><span class="num font-medium">${money(out)}</span></div>
@@ -1793,10 +1793,10 @@ tailwind.config = {
       <div class="flex items-center gap-3 px-5 py-3 border-b border-line active:bg-page ${on ? 'bg-page/60' : ''}" data-${selectMode ? 'sel' : 'edit'}="${t.id}">
         ${mark}
         <div class="min-w-0 flex-1">
-          <p class="text-[15px] font-medium truncate">${esc(t.desc)}</p>
-          <p class="num text-[12px] text-muted truncate">${esc(dayLabel(t.date))} · ${t.xfer ? 'Payment' : esc(t.cat)}</p>
+          <p class="text-[16px] font-medium truncate">${esc(t.desc)}</p>
+          <p class="num text-[13px] text-muted truncate">${esc(dayLabel(t.date))} · ${t.xfer ? 'Payment' : esc(t.cat)}</p>
         </div>
-        <div class="num text-[15px] font-semibold shrink-0 ${t.xfer ? 'text-muted' : t.amount < 0 ? 'text-income' : ''}">${t.xfer ? money(Math.abs(t.amount)) : t.amount < 0 ? '+' + money(Math.abs(t.amount)) : money(t.amount)}</div>
+        <div class="num text-[16px] font-semibold shrink-0 ${t.xfer ? 'text-muted' : t.amount < 0 ? 'text-income' : ''}">${t.xfer ? money(Math.abs(t.amount)) : t.amount < 0 ? '+' + money(Math.abs(t.amount)) : money(t.amount)}</div>
         ${selectMode ? '' : '<svg class="shrink-0 text-muted -mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>'}
       </div>`;
     }).join('')
@@ -1905,10 +1905,10 @@ tailwind.config = {
       <div class="flex items-center gap-3 px-4 py-3 active:bg-page" data-edit="${t.id}">
         ${t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:34px;height:34px;background:#93A1AE1A">${iconSvg('repeat', '#93A1AE', 19)}</span>` : t.amount < 0 ? catChip('Income', 34) : catChip(t.cat, 34)}
         <div class="min-w-0 flex-1">
-          <p class="text-[15px] font-medium truncate">${esc(t.desc)}</p>
-          <p class="num text-[12px] text-muted truncate">${esc(dayLabel(t.date))} · ${t.xfer ? 'Payment' : esc(t.cat)}${t.acct && t.acct !== 'Unassigned' ? ' · ' + esc(t.acct) : ''}</p>
+          <p class="text-[16px] font-medium truncate">${esc(t.desc)}</p>
+          <p class="num text-[13px] text-muted truncate">${esc(dayLabel(t.date))} · ${t.xfer ? 'Payment' : esc(t.cat)}${t.acct && t.acct !== 'Unassigned' ? ' · ' + esc(t.acct) : ''}</p>
         </div>
-        <div class="num text-[15px] font-semibold shrink-0 ${t.xfer ? 'text-muted' : t.amount < 0 ? 'text-income' : ''}">${t.xfer ? money(Math.abs(t.amount)) : t.amount < 0 ? '+' + money(Math.abs(t.amount)) : money(t.amount)}</div>
+        <div class="num text-[16px] font-semibold shrink-0 ${t.xfer ? 'text-muted' : t.amount < 0 ? 'text-income' : ''}">${t.xfer ? money(Math.abs(t.amount)) : t.amount < 0 ? '+' + money(Math.abs(t.amount)) : money(t.amount)}</div>
         <button data-del="${t.id}" aria-label="Delete ${esc(t.desc)}" class="w-8 h-8 -mr-1 shrink-0 grid place-items-center rounded-full text-muted active:bg-page">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
