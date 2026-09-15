@@ -125,7 +125,9 @@ tailwind.config = {
       <div id="rowDepositWrap" class="hidden justify-between"><span class="text-muted">Deposits you pasted</span><span id="rowDeposit" class="num font-semibold text-income">$0.00</span></div>
       <div class="flex justify-between"><span class="text-muted">Spent</span><span id="rowSpent" class="num font-semibold">$0.00</span></div>
       <div id="rowMovedWrap" class="hidden justify-between"><span class="text-muted">Card payments &amp; transfers</span><span id="rowMoved" class="num font-semibold text-muted">$0.00</span></div>
-      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="text-[16px] font-semibold">In the bank</span><span id="rowBank" class="num text-[17px] font-semibold">$0.00</span></div>
+      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="font-medium">In the bank</span><span id="rowBank" class="num font-semibold">$0.00</span></div>
+      <div id="rowOwedWrap" class="hidden justify-between"><span class="text-muted">Owed on cards</span><span id="rowOwed" class="num font-semibold text-over">$0.00</span></div>
+      <div id="rowNetWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span class="text-[16px] font-semibold">Truly yours</span><span id="rowNet" class="num text-[17px] font-semibold">$0.00</span></div>
     </div>
   </section>
 
@@ -326,6 +328,13 @@ tailwind.config = {
       <input id="countDeposits" type="checkbox" class="w-4 h-4 mt-0.5 accent-[#35C08A]">
       <span>Add pasted deposits on top of this. Turn it off if your paycheck is already counted above.</span>
     </label>
+
+    <div class="h-px bg-line my-5"></div>
+
+    <p class="text-[15px] font-bold tracking-tight mb-1.5">Card &amp; account balances</p>
+    <p class="text-[13px] text-muted leading-relaxed mb-3">Update these as you pay down. Charges and payments you paste move them on their own until you type a fresh figure.</p>
+    <div id="balancesList" class="space-y-2.5"></div>
+    <button id="saveBalances" class="mt-3 w-full h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Save balances</button>
 
     <div class="h-px bg-line my-5"></div>
 
@@ -1295,14 +1304,39 @@ tailwind.config = {
       const k = acctIcon(n);
       return (k === 'bank' || k === 'vault') && accounts[n] && accounts[n].asOf;
     });
+    const ow = $('rowOwedWrap'), nw = $('rowNetWrap');
+    // What the cards are carrying, so the cash figure is not the whole story
+    const cardNames = Object.keys(accounts).filter(n => {
+      const k = acctIcon(n);
+      return k !== 'bank' && k !== 'vault' && accounts[n] && accounts[n].asOf;
+    });
+    const cash = bankNames.reduce((sum, n) => sum + balanceDetail(n).now, 0);
+    const owed = cardNames.reduce((sum, n) => sum + balanceDetail(n).now, 0);
+
     if (bankNames.length) {
-      const now = bankNames.reduce((sum, n) => sum + balanceDetail(n).now, 0);
       bw.classList.remove('hidden'); bw.classList.add('flex');
       $('rowBankLabel').textContent = bankNames.length === 1 ? 'In ' + bankNames[0] + ' now' : 'In your accounts now';
-      $('rowBank').textContent = money(now);
-      $('rowBank').style.color = now > 0 ? '#35C08A' : '#E2614A';
+      $('rowBank').textContent = money(cash);
+      $('rowBank').style.color = cash > 0 ? '#35C08A' : '#E2614A';
     } else {
       bw.classList.add('hidden'); bw.classList.remove('flex');
+    }
+
+    if (cardNames.length && owed > 0) {
+      ow.classList.remove('hidden'); ow.classList.add('flex');
+      $('rowOwed').textContent = '-' + money(owed);
+    } else {
+      ow.classList.add('hidden'); ow.classList.remove('flex');
+    }
+
+    // Cash minus card debt: the number that is actually yours
+    if (bankNames.length && cardNames.length && owed > 0) {
+      const net = cash - owed;
+      nw.classList.remove('hidden'); nw.classList.add('flex');
+      $('rowNet').textContent = money(net);
+      $('rowNet').style.color = net >= 0 ? '#35C08A' : '#E2614A';
+    } else {
+      nw.classList.add('hidden'); nw.classList.remove('flex');
     }
 
     const left = moneyIn - spent;
@@ -1338,6 +1372,7 @@ tailwind.config = {
     renderCategories(list, spent);
     renderTransactions(list);
     renderLearned();
+    renderBalances();
     renderNag();
   }
 
@@ -1554,7 +1589,7 @@ tailwind.config = {
     const col = pct >= 70 ? '#E2614A' : pct >= 30 ? '#D79A2B' : '#2FA383';
     return `<div class="mt-2 pl-[42px] flex items-center gap-2.5">
       <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:${col}33"><div class="h-full rounded-full" style="width:${pct.toFixed(1)}%;background:${col}"></div></div>
-      <span class="num text-[12px] shrink-0" style="color:${col}">${money(Math.max(lim - bal, 0)).replace('.00','')} left</span>
+      <span class="num text-[12px] shrink-0" style="color:${col}">${Math.round(pct)}% used · ${money(Math.max(lim - bal, 0)).replace('.00','')} left</span>
     </div>`;
   }
 
@@ -2499,6 +2534,29 @@ tailwind.config = {
     reader.readAsText(file);
   }
 
+  $('saveBalances').onclick = function () {
+    let n = 0;
+    $('balancesList').querySelectorAll('[data-bal]').forEach(el => {
+      const name = el.getAttribute('data-bal');
+      const v = parseFloat(el.value);
+      const info = accounts[name] || {};
+      const next = isNaN(v) ? 0 : Math.abs(v);
+      if (next !== Number(info.balance || 0) || !info.asOf) { info.asOf = todayISO(); n++; }
+      info.balance = next;
+      accounts[name] = info;
+    });
+    $('balancesList').querySelectorAll('[data-lim]').forEach(el => {
+      const name = el.getAttribute('data-lim');
+      const v = parseFloat(el.value);
+      accounts[name] = accounts[name] || {};
+      accounts[name].limit = isNaN(v) ? 0 : Math.abs(v);
+    });
+    save(); render(); renderAcctSheet();
+    showMsg($('dataMsg'), n ? 'Balances updated. Anything you paste from today moves them from here.' : 'Limits saved.', 'good');
+    $('dataMsg').classList.remove('hidden');
+    toast('Balances saved');
+  };
+
   $('forgetCats').onclick = function () {
     if (!Object.keys(catMap).length) { toast('Nothing learned yet'); return; }
     if (!confirm('Forget all learned merchant categories?')) return;
@@ -2562,6 +2620,38 @@ tailwind.config = {
       : 'No backup yet. Download one so a cleared browser never costs you this.';
     nag.classList.remove('hidden');
     nag.classList.add('flex');
+  }
+
+  // Every account you use, with its balance and limit in one place.
+  function renderBalances() {
+    const names = Array.from(new Set(
+      Object.keys(accounts).concat(transactions.map(t => t.acct || 'Unassigned'))
+    )).filter(n => n && n !== 'Unassigned').sort();
+
+    if (!names.length) {
+      $('balancesList').innerHTML = '<p class="text-[13px] text-muted">No accounts yet. They appear here once you paste something.</p>';
+      return;
+    }
+
+    $('balancesList').innerHTML = names.map(n => {
+      const info = accounts[n] || {};
+      const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
+      const bd = balanceDetail(n);
+      const lim = Number(info.limit) || 0;
+      const pct = lim > 0 ? (bd.now / lim) * 100 : 0;
+      const col = lim > 0 ? (pct >= 70 ? '#E2614A' : pct >= 30 ? '#D79A2B' : '#35C08A') : '#93A1AE';
+      return `<div class="rounded-xl border border-line p-2.5">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="shrink-0 grid place-items-center rounded-[.5rem]" style="width:24px;height:24px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 14)}</span>
+          <span class="text-[14px] font-medium truncate flex-1">${esc(n)}</span>
+          ${lim > 0 ? `<span class="num text-[12px] shrink-0" style="color:${col}">${Math.round(pct)}% used</span>` : ''}
+        </div>
+        <div class="flex gap-2">
+          <input class="cell num text-[14px]" type="number" inputmode="decimal" step="0.01" placeholder="${isBank ? 'Balance' : 'Owed'}" value="${bd.start ? bd.start : ''}" data-bal="${esc(n)}" aria-label="${esc(n)} balance">
+          ${isBank ? '' : `<input class="cell num text-[14px]" type="number" inputmode="decimal" step="1" placeholder="Limit" value="${lim ? lim : ''}" data-lim="${esc(n)}" aria-label="${esc(n)} credit limit">`}
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function renderLearned() {
