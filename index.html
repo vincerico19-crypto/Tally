@@ -532,6 +532,8 @@ tailwind.config = {
       const before = text.slice(Math.max(0, start - 4), start);
       const after = text.slice(end, end + 4);
 
+      if (/[A-Za-z]$/.test(text.slice(0, start))) continue;   // the 2 in "P2P"
+      if (/^[A-Za-z]/.test(text.slice(end))) continue;        // the 2 in "2x" or "3rd"
       if (/[#*]\s?$/.test(before)) continue;                 // #1234 reference
       if (/[.\u2026\u00b7]{2,}\s?$/.test(before)) continue;      // "Noemy R...8681" — a card tail
       if (/\d\s?:\s?$/.test(before)) continue;              // the clock in a screenshot
@@ -991,8 +993,11 @@ tailwind.config = {
 
         // A card name or section heading only says which account comes next.
         const headAcct = guessAccount(s);
+        const headIsBank = acctIcon(headAcct) === 'bank' || acctIcon(headAcct) === 'vault';
         const looksLikeHeading = headAcct !== 'Unassigned'
-          && !/^\s*(to|from|payment|transfer|pmt|deposit)\b/i.test(s)   // those are transactions
+          && !/^\s*(to|from|payment|transfer|pmt|deposit)\b/i.test(s)
+          && !/\b(loan|paymt|pmt|payment|purchase|withdrawal|deposit|transfer|fee|charge|interest)\b/i.test(s)
+          && (!bankMode || headIsBank)          // a card name here is a payment out
           && s.split(/\s+/).length <= 5;
         if (looksLikeHeading || HEADER_LINE.test(s)) {
           if (headAcct !== 'Unassigned') runAcct = headAcct;
@@ -1093,7 +1098,9 @@ tailwind.config = {
 
       let signed = value;
       // "to <an account you have>" is moving your own money
-      const toOwnAccount = /^\s*(to|from)\b/i.test(desc) && guessAccount(desc) !== 'Unassigned';
+      const descAcct = guessAccount(desc);
+      const toOwnAccount = (/^\s*(to|from)\b/i.test(desc) && descAcct !== 'Unassigned')
+        || (bankMode && descAcct !== 'Unassigned' && value < 0);   // paying a card from checking
       const isXfer = looksLikeTransfer(s + ' ' + desc) || cat === 'Transfer' || toOwnAccount;
       if (bankMode) {
         signed = value < 0 ? Math.abs(value) : -Math.abs(value);   // minus means it left the account
@@ -2580,7 +2587,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-14 · 24';
+  const BUILD = '2026-09-15 · 25';
 
   /* =============================================================
      KEEPING THE DATA
