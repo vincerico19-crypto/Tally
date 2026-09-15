@@ -571,7 +571,7 @@ tailwind.config = {
   /* Moving your own money is not spending. A card payment from checking is the
      same dollars you already logged as charges on the card — counting both
      would double your month. These get flagged and kept out of the totals. */
-  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer)\b/i;
+  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account \d|from account \d|to account|from account|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer)\b/i;
   function looksLikeTransfer(text) {
     if (/\bpayroll|direct dep|paycheck\b/i.test(text)) return false;   // that is real income
     return XFER_HINTS.test(text);
@@ -841,12 +841,19 @@ tailwind.config = {
     }
 
     // --- Free text, line by line ---
-    let lastDate = null, skipped = 0, heldCat = null, lastWasDesc = false;
+    let lastDate = null, skipped = 0, heldCat = null, lastWasDesc = false, lastWasBareAmount = false;
+    let orphanAmount = null;      // an amount still looking for its merchant
     const pending = [];   // merchants seen, still waiting for their amount
 
     /* A card app shows the account summary — limit, balance, buttons, offers —
        above the first date heading. None of it is a transaction. If nothing
        before that heading carries an amount, everything before it is chrome. */
+    /* A card statement writes a credit as a minus. A checking app writes a
+       debit as a minus and a deposit plain. Detect which one this is, and
+       read the signs accordingly. */
+    const bankMode = /\b(available balance|current balance|checking|savings account|posted transactions)\b/i.test(raw)
+      && /-\s?[$\u20ac\u00a3]?\s?\d/.test(raw);
+
     // A card name anywhere in the paste (a statement header, say) applies to the whole batch.
     const batchAcct = guessAccount(raw);
     let runAcct = batchAcct;
@@ -855,7 +862,7 @@ tailwind.config = {
     /* Screenshots of a bank app carry a lot that is not a transaction:
        the phone status bar, tab-bar labels, reward badges, and the card
        holder's name with the last four digits. All of it goes first. */
-    const UI_JUNK = /^(pending|posted|transactions?|search|filter|filters|home|rewards|help|offers|profile|account|accounts|activity|settings|done|cancel|edit|more|show more|see all|view all|recent|all|menu|back|balance|summary|details|sort|membership|make payment|pay now|view offer|check offer|see offer|get offer|learn more|see details|manage|statements?|payments?|personal loans?|credit limit|available credit|current balance|minimum payment|payment due|statements and activity|view balance details|view statement|rewards? balance|points balance)$/i;
+    const UI_JUNK = /^(pending|posted|transactions?|search|filter|filters|home|rewards|help|offers|profile|account|accounts|activity|settings|done|cancel|edit|more|show more|see all|view all|recent|all|menu|back|balance|summary|details|sort|membership|make payment|pay now|view offer|check offer|see offer|get offer|learn more|see details|manage|statements?|payments?|personal loans?|credit limit|available credit|current balance|minimum payment|payment due|statements and activity|view balance details|view statement|rewards? balance|points balance|account info|deposit|zelle|zelle\u00ae|search transactions|available balance|current balance|posted transactions|daily cash checking|routing number|transfer money|move money|pay bills?)$/i;
     // Card apps push offers between the rows. None of it is money you spent.
     const MARKETING = /\b(terms apply|apply for the|apply now|earn \d|earn with|view offer|limited[- ]time|no annual fee|refer a friend|set up autopay|activate (your )?(offer|card)|redeem|you(')?re pre-?approved|welcome offer|bonus (points|miles)|see if you|personal loan|balance details & options|view balance details)\b/i;
     const STATUS_BAR = /^\d{1,2}:\d{2,3}\b/;
@@ -868,6 +875,7 @@ tailwind.config = {
         .replace(/[.\u2026]{2,}\s*\d{3,4}\b/g, ' ')
         .replace(/\b(ending in|ending)\s*\d{4}\b/gi, ' ')
         .replace(/[\u203a\u00bb\u2039\u00ab>\u2192]+/g, ' ')
+        .replace(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\b,?/gi, ' ')
         .replace(/[\u2022\u00b7|]+/g, ' ')
         .replace(/\s{2,}/g, ' ')
         .trim();
@@ -896,6 +904,8 @@ tailwind.config = {
     const NOT_A_TX = /\b(available balance|current balance|beginning balance|ending balance|previous balance|balance forward|running balance|statement period|account number|routing|page \d)\b/i;
     // Receipt sub-lines: the total already covers them.
     const SUB_LINE = /^\s*(sub\s?total|tax|tip|gratuity|change|cash tendered|tender|auth(orization)? code|ref(erence)? ?#|card ?#|approval)\b/i;
+
+    function orphanDateKnown(d) { return !!lastDate && d === lastDate; }
 
     function gate(l) {
       let t = ocrFix(String(l).replace(/\t/g, '  '));
@@ -972,7 +982,10 @@ tailwind.config = {
 
         // A card name or section heading only says which account comes next.
         const headAcct = guessAccount(s);
-        if (headAcct !== 'Unassigned' || HEADER_LINE.test(s)) {
+        const looksLikeHeading = headAcct !== 'Unassigned'
+          && !/^\s*(to|from|payment|transfer|pmt|deposit)\b/i.test(s)   // those are transactions
+          && s.split(/\s+/).length <= 5;
+        if (looksLikeHeading || HEADER_LINE.test(s)) {
           if (headAcct !== 'Unassigned') runAcct = headAcct;
           lastWasDesc = false;
           return;
@@ -989,6 +1002,25 @@ tailwind.config = {
         if (asCat) {
           if (pending.length) pending[pending.length - 1].cat = asCat;
           else heldCat = asCat;
+          lastWasDesc = false;
+          return;
+        }
+
+        // An amount came through just before this line — they belong together.
+        if (orphanAmount) {
+          const v = orphanAmount.value;
+          const oDate = orphanAmount.date || lastDate || todayISO();
+          orphanAmount = null;
+          const oXfer = looksLikeTransfer(leftover) || (/^\s*(to|from)\b/i.test(leftover) && guessAccount(leftover) !== 'Unassigned');
+          const oSigned = bankMode ? (v < 0 ? Math.abs(v) : -Math.abs(v)) : v;
+          const oAcct = guessAccount(leftover);
+          rows.push(makeRow(oDate, leftover, Math.abs(oSigned) * (oXfer ? 1 : Math.sign(oSigned)), {
+            xfer: oXfer,
+            cat: rememberedCat(leftover) || heldCat,
+            guessedDate: !orphanDateKnown(oDate),
+            acct: oAcct !== 'Unassigned' ? oAcct : (runAcct !== 'Unassigned' ? runAcct : null)
+          }));
+          heldCat = null;
           lastWasDesc = false;
           return;
         }
@@ -1014,6 +1046,22 @@ tailwind.config = {
       if (value == null || value === 0) { skipped++; return; }
 
       let desc = cleanDesc(rest.slice(0, amtHit.start) + ' ' + rest.slice(amtHit.end));
+
+      /* Checking apps print the running balance right under each amount, and the
+         account's own balance at the top. Neither is a transaction: the first is
+         a second bare amount in a row, the second has no merchant waiting. */
+      if (bankMode && !desc && !dateHit) {
+        if (lastWasBareAmount) { lastWasBareAmount = false; return; }   // the running balance
+        if (!pending.length) {
+          // No merchant waiting. At the top of the screen that is the account's
+          // own balance; further down it is an amount OCR put before its name.
+          if (rows.length && !orphanAmount) orphanAmount = { value: value, date: lastDate };
+          return;
+        }
+        lastWasBareAmount = true;
+      } else {
+        lastWasBareAmount = false;
+      }
       let cat = null, queuedDate = null;
 
       if (!desc) {
@@ -1035,8 +1083,14 @@ tailwind.config = {
       if (dateHit) lastDate = dateHit.iso;
 
       let signed = value;
-      const isXfer = looksLikeTransfer(s + ' ' + desc) || cat === 'Transfer';
-      if (!isXfer && signed > 0 && INCOME_HINTS.test(s)) signed = -signed;
+      // "to <an account you have>" is moving your own money
+      const toOwnAccount = /^\s*(to|from)\b/i.test(desc) && guessAccount(desc) !== 'Unassigned';
+      const isXfer = looksLikeTransfer(s + ' ' + desc) || cat === 'Transfer' || toOwnAccount;
+      if (bankMode) {
+        signed = value < 0 ? Math.abs(value) : -Math.abs(value);   // minus means it left the account
+      } else if (!isXfer && signed > 0 && INCOME_HINTS.test(s)) {
+        signed = -signed;
+      }
 
       // A Venmo or PayPal charge sitting on a bank statement still belongs to
       // that bank, not to Venmo — the statement it came from wins.
@@ -1137,7 +1191,7 @@ tailwind.config = {
 
     const dupeNote = draftDupes.length
       ? `<div class="rounded-xl bg-white/10 text-ink text-[13px] leading-relaxed px-3 py-2.5 flex items-center gap-3">
-           <span class="flex-1">${draftDupes.length} row${draftDupes.length === 1 ? '' : 's'} already saved — left out.</span>
+           <span class="flex-1">${draftDupes.length} row${draftDupes.length === 1 ? ' looks like a repeat' : 's look like repeats'} — left out.</span>
            <button data-adddupes="1" class="shrink-0 font-semibold active:opacity-60">Add anyway</button>
          </div>`
       : '';
@@ -2169,8 +2223,16 @@ tailwind.config = {
     const { rows, notes } = parseAnything($('bulkInput').value);
     const msg = $('pasteMsg');
     if (!rows.length) { showMsg(msg, notes.map(esc).join('<br>'), 'bad'); msg.classList.remove('hidden'); return; }
-    draftDupes = rows.filter(isDuplicate);
-    draft = rows.filter(r => !draftDupes.includes(r));
+    // Against what is already saved, and against earlier rows in this same paste
+    const seen = [];
+    draftDupes = [];
+    draft = [];
+    rows.forEach(r => {
+      const key = merchantKey(r.desc);
+      const twinHere = seen.some(o => o.key === key && Math.abs(o.amount - r.amount) < 0.005 && daysApart(o.date, r.date) <= 3);
+      if (isDuplicate(r) || twinHere) draftDupes.push(r);
+      else { draft.push(r); seen.push({ key: key, amount: r.amount, date: r.date }); }
+    });
     draftNotes = notes;
     if (!draft.length && draftDupes.length) {       // everything was a repeat
       draft = draftDupes; draftDupes = [];
