@@ -916,15 +916,24 @@ tailwind.config = {
 
     const scan = raw.split(/\r?\n/).map(l => {
       const g = gate(l);
-      if (!g) return { date: false, amt: false };
+      if (!g) return { date: false, amt: false, desc: false };
       const d = findDate(g.s);
       const a = findAmount(d ? g.s.replace(d.match, ' ') : g.s);
-      return { date: !!d && !a, amt: !!a };
+      return { date: !!d && !a, amt: !!a, desc: !d && !a };
     });
     let headerCut = -1;
     for (let i = 0; i < scan.length; i++) {
       if (scan[i].date) { headerCut = i; break; }
       if (scan[i].amt) break;                      // real rows up here, keep them
+    }
+    /* Some apps list every merchant first and every amount at the end. Then the
+       lines above the first date heading are real transactions, not chrome.
+       If there are more amounts than merchant lines below the heading, the ones
+       above it are needed to pair them off. */
+    if (headerCut > 0) {
+      const amounts = scan.filter(x => x.amt).length;
+      const descsAfter = scan.slice(headerCut + 1).filter(x => x.desc).length;
+      if (amounts > descsAfter) headerCut = -1;
     }
 
 
