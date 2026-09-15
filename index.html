@@ -1302,13 +1302,13 @@ tailwind.config = {
     const bw = $('rowBankWrap');
     const bankNames = Object.keys(accounts).filter(n => {
       const k = acctIcon(n);
-      return (k === 'bank' || k === 'vault') && accounts[n] && accounts[n].asOf;
+      return (k === 'bank' || k === 'vault') && accounts[n] && Number(accounts[n].balance) > 0;
     });
     const ow = $('rowOwedWrap'), nw = $('rowNetWrap');
     // What the cards are carrying, so the cash figure is not the whole story
     const cardNames = Object.keys(accounts).filter(n => {
       const k = acctIcon(n);
-      return k !== 'bank' && k !== 'vault' && accounts[n] && accounts[n].asOf;
+      return k !== 'bank' && k !== 'vault' && accounts[n] && Number(accounts[n].balance) > 0;
     });
     const cash = bankNames.reduce((sum, n) => sum + balanceDetail(n).now, 0);
     const owed = cardNames.reduce((sum, n) => sum + balanceDetail(n).now, 0);
@@ -2580,7 +2580,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-14 · 23';
+  const BUILD = '2026-09-14 · 24';
 
   /* =============================================================
      KEEPING THE DATA
