@@ -336,6 +336,19 @@ tailwind.config = {
     <div id="balancesList" class="space-y-2.5"></div>
     <button id="saveBalances" class="mt-3 w-full h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Save balances</button>
 
+    <p class="text-[15px] font-bold tracking-tight mt-5 mb-1.5">Record a payment</p>
+    <p class="text-[13px] text-muted leading-relaxed mb-3">Paying a card down? Log it here and both sides move at once — the card drops, the account it came from drops, and your spending total is untouched.</p>
+    <div class="space-y-2">
+      <div class="flex gap-2">
+        <select id="payCard" class="cell text-[15px] flex-1" aria-label="Card being paid"></select>
+        <input id="payAmount" type="number" inputmode="decimal" step="0.01" min="0" class="cell num text-[15px] w-28 shrink-0 text-right" placeholder="Amount" aria-label="Payment amount">
+      </div>
+      <div class="flex gap-2">
+        <select id="payFrom" class="cell text-[15px] flex-1" aria-label="Paid from"></select>
+        <button id="recordPay" class="h-[42px] px-4 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80 shrink-0">Record</button>
+      </div>
+    </div>
+
     <div class="h-px bg-line my-5"></div>
 
     <p class="text-[15px] font-bold tracking-tight mb-2">Your data</p>
@@ -940,7 +953,8 @@ tailwind.config = {
       if (!g) return { date: false, amt: false, desc: false };
       const d = findDate(g.s);
       const a = findAmount(d ? g.s.replace(d.match, ' ') : g.s);
-      return { date: !!d && !a, amt: !!a, desc: !d && !a };
+      const cd = cleanDesc(d ? g.s.replace(d.match, ' ') : g.s);
+      return { date: !!d && !a, amt: !!a, desc: !d && !a && !!cd && !asCategory(cd) };
     });
     let headerCut = -1;
     for (let i = 0; i < scan.length; i++) {
@@ -1380,6 +1394,7 @@ tailwind.config = {
     renderTransactions(list);
     renderLearned();
     renderBalances();
+    renderPayPickers();
     renderNag();
   }
 
@@ -2541,6 +2556,39 @@ tailwind.config = {
     reader.readAsText(file);
   }
 
+  $('recordPay').onclick = function () {
+    const card = $('payCard').value, from = $('payFrom').value;
+    const amt = Math.abs(parseFloat($('payAmount').value) || 0);
+    if (!card || !from) { toast('Pick a card and an account'); return; }
+    if (!amt) { toast('Enter an amount'); return; }
+
+    transactions.push({
+      id: uid(), date: todayISO(),
+      desc: 'Payment to ' + card,
+      cat: 'Transfer', acct: from, xfer: true, amount: amt
+    });
+    // Move both stored balances now and re-stamp them, so the figures are
+    // right immediately and today's entry is not counted twice.
+    const cardInfo = accounts[card] || {};
+    cardInfo.balance = Math.max(balanceDetail(card).now - amt, 0);
+    cardInfo.asOf = todayISO();
+    accounts[card] = cardInfo;
+
+    const fromInfo = accounts[from] || {};
+    if (Number(fromInfo.balance) > 0 || fromInfo.asOf) {
+      fromInfo.balance = Math.max(balanceDetail(from).now - amt, 0);
+      fromInfo.asOf = todayISO();
+      accounts[from] = fromInfo;
+    }
+
+    save(); render(); renderAcctSheet(); renderBalances();
+    $('payAmount').value = '';
+    const owedNow = balanceDetail(card).now;
+    showMsg($('dataMsg'), money(amt) + ' paid to ' + esc(card) + ' from ' + esc(from) + '. ' + esc(card) + ' now shows ' + money(owedNow) + '.', 'good');
+    $('dataMsg').classList.remove('hidden');
+    toast('Payment recorded');
+  };
+
   $('saveBalances').onclick = function () {
     let n = 0;
     $('balancesList').querySelectorAll('[data-bal]').forEach(el => {
@@ -2587,7 +2635,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 25';
+  const BUILD = '2026-09-15 · 27';
 
   /* =============================================================
      KEEPING THE DATA
@@ -2659,6 +2707,21 @@ tailwind.config = {
         </div>
       </div>`;
     }).join('');
+  }
+
+  // Paying a card is one movement with two ends. Logging it here writes the
+  // transaction, so the card and the account it came from both move.
+  function renderPayPickers() {
+    const all = Array.from(new Set(
+      Object.keys(accounts).concat(transactions.map(t => t.acct || 'Unassigned'))
+    )).filter(n => n && n !== 'Unassigned').sort();
+    const cards = all.filter(n => acctIcon(n) !== 'bank' && acctIcon(n) !== 'vault');
+    const banks = all.filter(n => acctIcon(n) === 'bank' || acctIcon(n) === 'vault');
+    const keepCard = $('payCard').value, keepFrom = $('payFrom').value;
+    $('payCard').innerHTML = cards.map(c => `<option value="${esc(c)}"${c === keepCard ? ' selected' : ''}>${esc(c)}</option>`).join('')
+      || '<option value="">No cards yet</option>';
+    $('payFrom').innerHTML = (banks.length ? banks : all).map(b => `<option value="${esc(b)}"${b === keepFrom ? ' selected' : ''}>from ${esc(b)}</option>`).join('')
+      || '<option value="">No account yet</option>';
   }
 
   function renderLearned() {
