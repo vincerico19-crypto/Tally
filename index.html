@@ -1606,6 +1606,15 @@ tailwind.config = {
     return n >= 1000 ? '$' + (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : '$' + Math.round(n);
   }
 
+  // What this card is carrying right now, beside the month's activity.
+  function owedLabel(n) {
+    const info = accounts[n] || {};
+    if (!(Number(info.balance) > 0)) return '';
+    const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
+    const now = balanceDetail(n).now;
+    return ` · <span class="font-semibold" style="color:${isBank ? '#35C08A' : '#E9EEF3'}">${money(now)} ${isBank ? 'balance' : 'owed'}</span>`;
+  }
+
   function utilStrip(n) {
     const info = accounts[n] || {};
     const lim = Number(info.limit) || 0;
@@ -1633,7 +1642,7 @@ tailwind.config = {
             <span class="text-[16px] font-medium truncate flex-1">${esc(n)}</span>
             <span class="num text-[16px] font-semibold shrink-0">${money(map[n].out)}</span>
           </div>
-          <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · ' + money(map[n].paid) + ' paid' : ''}</p>
+          <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · ' + money(map[n].paid) + ' paid' : ''}${owedLabel(n)}</p>
           ${utilStrip(n)}
         </button>`).join('');
     }
@@ -1848,41 +1857,28 @@ tailwind.config = {
     const util = lim > 0 ? (bal / lim) * 100 : 0;
     const utilColor = util >= 70 ? '#E2614A' : util >= 30 ? '#D79A2B' : '#2FA383';
 
-    const card = `
+    const card = (bd.start || lim) ? `
       <div class="px-5 py-4 border-b border-line">
-        <p class="text-[15px] font-bold tracking-tight mb-3">${isBank ? 'Account balance' : 'Card balance and limit'}</p>
-        <div class="flex gap-2">
-          <div class="flex-1">
-            <label class="block text-[12px] text-muted mb-1" for="cardBalance">${isBank ? 'Balance today' : 'Balance owed today'}</label>
-            <input id="cardBalance" type="number" inputmode="decimal" step="0.01" class="cell num text-[15px] font-semibold" placeholder="0.00" value="${bd.start ? bd.start : ''}">
-          </div>
-          ${isBank ? '' : `<div class="flex-1">
-            <label class="block text-[12px] text-muted mb-1" for="cardLimit">Credit limit</label>
-            <input id="cardLimit" type="number" inputmode="decimal" step="1" class="cell num text-[15px] font-semibold" placeholder="0" value="${lim ? lim : ''}">
-          </div>`}
-          <div class="flex items-end">
-            <button data-savecard="1" class="h-[42px] px-4 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Save</button>
-          </div>
+        <div class="flex items-baseline justify-between">
+          <span class="text-[15px] font-bold tracking-tight">${isBank ? 'Balance' : 'Owed now'}</span>
+          <span class="num text-[20px] font-semibold" style="color:${isBank ? '#35C08A' : utilColor}">${money(bal)}</span>
         </div>
-        ${(bd.asOf && (bd.charges || bd.payments)) ? `
-          <div class="mt-3 rounded-xl bg-page/70 px-3 py-2.5 text-[13px] space-y-1">
-            <div class="flex justify-between"><span class="text-muted">Entered ${esc(dayLabel(bd.asOf))}</span><span class="num">${money(bd.start)}</span></div>
-            ${bd.charges ? `<div class="flex justify-between"><span class="text-muted">Charges since</span><span class="num">+${money(bd.charges)}</span></div>` : ''}
-            ${bd.payments ? `<div class="flex justify-between"><span class="text-muted">Payments &amp; credits since</span><span class="num text-income">-${money(bd.payments)}</span></div>` : ''}
-            <div class="flex justify-between pt-1 border-t border-line font-semibold"><span>${isBank ? 'Balance now' : 'Owed now'}</span><span class="num">${money(bd.now)}</span></div>
-          </div>` : ''}
         ${(!isBank && lim > 0) ? `
           <div class="mt-3 h-2.5 rounded-full overflow-hidden" style="background:${utilColor}33">
             <div class="h-full rounded-full" style="width:${Math.min(util, 100).toFixed(1)}%;background:${utilColor}"></div>
           </div>
           <div class="mt-2 flex items-baseline justify-between text-[13px]">
-            <span style="color:${utilColor}" class="font-medium">${money(Math.max(lim - bal, 0))} available</span>
+            <span class="font-medium" style="color:${utilColor}">${money(Math.max(lim - bal, 0))} available</span>
             <span class="num text-muted">${Math.round(util)}% of ${money(lim)} used</span>
-          </div>
-          ${util >= 30 ? `<p class="text-[12px] text-muted mt-1.5">Under 30% of your limit is the level credit scoring treats as healthy${util >= 70 ? ' — this one is well above it' : ''}.</p>` : ''}
-          <p class="text-[12px] text-muted mt-1.5">Type what the card actually says whenever you check it. Charges and payments logged after that move it on their own.</p>
-        ` : ''}
-      </div>`;
+          </div>` : ''}
+        ${(bd.asOf && (bd.charges || bd.payments)) ? `
+          <div class="mt-3 rounded-xl bg-white/5 px-3 py-2.5 text-[13px] space-y-1">
+            <div class="flex justify-between"><span class="text-muted">You entered ${esc(dayLabel(bd.asOf))}</span><span class="num">${money(bd.start)}</span></div>
+            ${bd.charges ? `<div class="flex justify-between"><span class="text-muted">Charges since</span><span class="num">+${money(bd.charges)}</span></div>` : ''}
+            ${bd.payments ? `<div class="flex justify-between"><span class="text-muted">Payments &amp; credits since</span><span class="num text-income">-${money(bd.payments)}</span></div>` : ''}
+          </div>` : ''}
+        <p class="text-[12px] text-muted mt-2.5 leading-relaxed">Everything you log moves this on its own. To resync with what the card says, use Card &amp; account balances in settings.</p>
+      </div>` : '';
 
     const stats = `
       <div class="px-5 py-4 border-b border-line">
@@ -2082,20 +2078,6 @@ tailwind.config = {
     openAcctSheet(btn.getAttribute('data-acct'));
   });
   $('acctSheetBody').addEventListener('click', function (e) {
-    if (e.target.closest('[data-savecard]')) {
-      const b = parseFloat(($('cardBalance') || {}).value);
-      const lEl = $('cardLimit');
-      const l = lEl ? parseFloat(lEl.value) : NaN;
-      const info = accounts[acctDetail] || {};
-      const nextBal = isNaN(b) ? 0 : Math.abs(b);
-      if (nextBal !== Number(info.balance || 0) || !info.asOf) { info.asOf = todayISO(); info.asOfTime = Date.now(); }
-      info.balance = nextBal;
-      if (lEl) info.limit = isNaN(l) ? 0 : Math.abs(l);
-      accounts[acctDetail] = info;
-      save(); render(); renderAcctSheet();
-      toast('Balance saved');
-      return;
-    }
     const pick = e.target.closest('[data-sel]');
     if (pick) {
       const id = pick.getAttribute('data-sel');
@@ -2639,7 +2621,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 28';
+  const BUILD = '2026-09-15 · 29';
 
   /* =============================================================
      KEEPING THE DATA
