@@ -332,7 +332,7 @@ tailwind.config = {
     <div class="h-px bg-line my-5"></div>
 
     <p class="text-[15px] font-bold tracking-tight mb-1.5">Card &amp; account balances</p>
-    <p class="text-[13px] text-muted leading-relaxed mb-3">Update these as you pay down. Charges and payments you paste move them on their own until you type a fresh figure.</p>
+    <p class="text-[13px] text-muted leading-relaxed mb-3">Enter what the account said on a given day. Everything you have logged since that day is added or subtracted automatically — so setting the date back to the start of the month lets your transactions do the maths.</p>
     <div id="balancesList" class="space-y-2.5"></div>
     <button id="saveBalances" class="mt-3 w-full h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Save balances</button>
 
@@ -2582,8 +2582,15 @@ tailwind.config = {
       const v = parseFloat(el.value);
       const info = accounts[name] || {};
       const next = isNaN(v) ? 0 : Math.abs(v);
-      if (next !== Number(info.balance || 0) || !info.asOf) { info.asOf = todayISO(); info.asOfTime = Date.now(); n++; }
+      const dateEl = $('balancesList').querySelector('[data-asof="' + name.replace(/"/g, '\\"') + '"]');
+      const chosen = (dateEl && dateEl.value) ? dateEl.value : todayISO();
+      if (next !== Number(info.balance || 0) || chosen !== info.asOf) n++;
       info.balance = next;
+      info.asOf = chosen;
+      // Dated today: count anything logged from now on. Dated earlier: count
+      // everything already logged after that date.
+      if (chosen === todayISO()) info.asOfTime = Date.now();
+      else delete info.asOfTime;
       accounts[name] = info;
     });
     $('balancesList').querySelectorAll('[data-lim]').forEach(el => {
@@ -2621,7 +2628,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 29';
+  const BUILD = '2026-09-15 · 30';
 
   /* =============================================================
      KEEPING THE DATA
@@ -2690,6 +2697,11 @@ tailwind.config = {
         <div class="flex gap-2">
           <input class="cell num text-[14px]" type="number" inputmode="decimal" step="0.01" placeholder="${isBank ? 'Balance' : 'Owed'}" value="${bd.start ? bd.start : ''}" data-bal="${esc(n)}" aria-label="${esc(n)} balance">
           ${isBank ? '' : `<input class="cell num text-[14px]" type="number" inputmode="decimal" step="1" placeholder="Limit" value="${lim ? lim : ''}" data-lim="${esc(n)}" aria-label="${esc(n)} credit limit">`}
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="text-[12px] text-muted shrink-0">as of</span>
+          <input class="cell num text-[13px]" type="date" value="${esc(info.asOf || todayISO())}" data-asof="${esc(n)}" aria-label="${esc(n)} balance date">
+          ${(bd.charges || bd.payments) ? `<span class="num text-[12px] shrink-0 text-muted">${bd.charges ? '+' + money(bd.charges).replace('.00','') : ''}${bd.payments ? ' -' + money(bd.payments).replace('.00','') : ''} → <span class="font-semibold" style="color:${col}">${money(bd.now).replace('.00','')}</span></span>` : ''}
         </div>
       </div>`;
     }).join('');
