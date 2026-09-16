@@ -1439,10 +1439,14 @@ tailwind.config = {
     const start = Number(info.balance) || 0;
     const asOf = info.asOf || null;
     if (!asOf) return { start, asOf: null, charges: 0, payments: 0, now: start };
+    const stamp = Number(info.asOfTime) || 0;
 
     let charges = 0, payments = 0;
     transactions.forEach(t => {
-      if (t.date <= asOf) return;
+      // Anything logged after you typed the balance counts, whatever date it
+      // carries. Rows saved before that fall back to comparing dates.
+      const counts = (stamp && t.at) ? (t.at > stamp) : (t.date > asOf);
+      if (!counts) return;
       const mine = (t.acct || 'Unassigned') === name;
       if (t.xfer) {
         // a payment sitting on the card, or one made from elsewhere that names it
@@ -2084,7 +2088,7 @@ tailwind.config = {
       const l = lEl ? parseFloat(lEl.value) : NaN;
       const info = accounts[acctDetail] || {};
       const nextBal = isNaN(b) ? 0 : Math.abs(b);
-      if (nextBal !== Number(info.balance || 0) || !info.asOf) info.asOf = todayISO();
+      if (nextBal !== Number(info.balance || 0) || !info.asOf) { info.asOf = todayISO(); info.asOfTime = Date.now(); }
       info.balance = nextBal;
       if (lEl) info.limit = isNaN(l) ? 0 : Math.abs(l);
       accounts[acctDetail] = info;
@@ -2373,7 +2377,7 @@ tailwind.config = {
       }
       let acct = titleCaseAcct(r.acct);
       if (acct === 'Unassigned' && settings.primaryAcct) acct = settings.primaryAcct;
-      return { id: r.id, date: r.date, desc: (r.desc || '').trim() || 'Untitled', cat: cat, acct: acct, xfer: r.dir === 'xfer', amount: r.dir === 'in' ? -r.amount : r.amount };
+      return { id: r.id, at: Date.now(), date: r.date, desc: (r.desc || '').trim() || 'Untitled', cat: cat, acct: acct, xfer: r.dir === 'xfer', amount: r.dir === 'in' ? -r.amount : r.amount };
     });
     if (!clean.length) { toast('Every row has a zero amount'); return; }
 
@@ -2563,7 +2567,7 @@ tailwind.config = {
     if (!amt) { toast('Enter an amount'); return; }
 
     transactions.push({
-      id: uid(), date: todayISO(),
+      id: uid(), at: Date.now(), date: todayISO(),
       desc: 'Payment to ' + card,
       cat: 'Transfer', acct: from, xfer: true, amount: amt
     });
@@ -2571,13 +2575,13 @@ tailwind.config = {
     // right immediately and today's entry is not counted twice.
     const cardInfo = accounts[card] || {};
     cardInfo.balance = Math.max(balanceDetail(card).now - amt, 0);
-    cardInfo.asOf = todayISO();
+    cardInfo.asOf = todayISO(); cardInfo.asOfTime = Date.now();
     accounts[card] = cardInfo;
 
     const fromInfo = accounts[from] || {};
     if (Number(fromInfo.balance) > 0 || fromInfo.asOf) {
       fromInfo.balance = Math.max(balanceDetail(from).now - amt, 0);
-      fromInfo.asOf = todayISO();
+      fromInfo.asOf = todayISO(); fromInfo.asOfTime = Date.now();
       accounts[from] = fromInfo;
     }
 
@@ -2596,7 +2600,7 @@ tailwind.config = {
       const v = parseFloat(el.value);
       const info = accounts[name] || {};
       const next = isNaN(v) ? 0 : Math.abs(v);
-      if (next !== Number(info.balance || 0) || !info.asOf) { info.asOf = todayISO(); n++; }
+      if (next !== Number(info.balance || 0) || !info.asOf) { info.asOf = todayISO(); info.asOfTime = Date.now(); n++; }
       info.balance = next;
       accounts[name] = info;
     });
@@ -2635,7 +2639,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 27';
+  const BUILD = '2026-09-15 · 28';
 
   /* =============================================================
      KEEPING THE DATA
