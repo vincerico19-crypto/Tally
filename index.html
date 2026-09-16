@@ -1611,8 +1611,28 @@ tailwind.config = {
     const info = accounts[n] || {};
     if (!(Number(info.balance) > 0)) return '';
     const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
+    if (isBank) return '';                       // shown on its own bar below
     const now = balanceDetail(n).now;
     return ` · <span class="font-semibold" style="color:${isBank ? '#35C08A' : '#E9EEF3'}">${money(now)} ${isBank ? 'balance' : 'owed'}</span>`;
+  }
+
+  /* A checking account has no limit to fill, so its bar shows the month's
+     shape instead: what came in against what went out, with the balance. */
+  function bankStrip(n, m) {
+    const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
+    const info = accounts[n] || {};
+    if (!isBank || !(Number(info.balance) > 0)) return '';
+    const inn = m ? m.in : 0;
+    const out = (m ? m.out : 0) + (m ? m.paid : 0);
+    const span = Math.max(inn + out, 1);
+    const now = balanceDetail(n).now;
+    return `<div class="mt-2 pl-[42px] flex items-center gap-2.5">
+      <div class="flex-1 h-1.5 rounded-full overflow-hidden flex bg-page">
+        <div class="h-full" style="width:${(inn / span * 100).toFixed(1)}%;background:#35C08A"></div>
+        <div class="h-full" style="width:${(out / span * 100).toFixed(1)}%;background:#7F98A6"></div>
+      </div>
+      <span class="num text-[12px] shrink-0 font-semibold" style="color:#35C08A">${money(now).replace('.00', '')}</span>
+    </div>`;
   }
 
   function utilStrip(n) {
@@ -1643,7 +1663,7 @@ tailwind.config = {
             <span class="num text-[16px] font-semibold shrink-0">${money(map[n].out)}</span>
           </div>
           <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · ' + money(map[n].paid) + ' paid' : ''}${owedLabel(n)}</p>
-          ${utilStrip(n)}
+          ${utilStrip(n)}${bankStrip(n, map[n])}
         </button>`).join('');
     }
 
@@ -2628,7 +2648,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 30';
+  const BUILD = '2026-09-15 · 31';
 
   /* =============================================================
      KEEPING THE DATA
