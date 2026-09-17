@@ -1688,11 +1688,11 @@ tailwind.config = {
 
   function dueStrip(n) {
     const info = accounts[n] || {};
-    if (!info.dueDay) return '';
-    const days = daysUntilDue(info.dueDay);
-    if (days > 10) return '';
-    const col = days <= 3 ? '#E2614A' : '#D79A2B';
-    return `<p class="num text-[12px] font-semibold mt-1 pl-[42px]" style="color:${col}">${esc(dueLabel(info.dueDay))}</p>`;
+    const dt = nextDue(info);
+    if (!dt) return '';
+    const col = dueColor(dt);
+    const soon = daysUntilDue(dt) <= 10;
+    return `<p class="num text-[12px] ${soon ? 'font-semibold' : ''} mt-1 pl-[42px]" style="color:${col}">${esc(dueLabel(dt))}</p>`;
   }
 
   function bankStrip(n, m) {
@@ -1712,20 +1712,42 @@ tailwind.config = {
     </div>`;
   }
 
-  // How far off the next due date is, from today.
-  function daysUntilDue(day) {
-    const now = new Date();
-    let d = new Date(now.getFullYear(), now.getMonth(), day);
-    if (d < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-      d = new Date(now.getFullYear(), now.getMonth() + 1, day);
+  /* A due date rolls forward a month at a time, so one entry keeps working. */
+  function dueValue(info) {
+    if (info.dueDate) return info.dueDate;
+    if (info.dueDay) {                              // from the older day-only field
+      const now = new Date();
+      return iso(now.getFullYear(), now.getMonth() + 1, info.dueDay);
     }
-    return Math.round((d - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+    return '';
   }
-  function dueLabel(day) {
-    const n = daysUntilDue(day);
+  function nextDue(info) {
+    const v = dueValue(info);
+    if (!v) return null;
+    const [y, m, d] = v.split('-').map(Number);
+    const today = new Date();
+    const floor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let next = new Date(y, m - 1, d);
+    while (next < floor) next = new Date(next.getFullYear(), next.getMonth() + 1, d);
+    return next;
+  }
+  function daysUntilDue(dt) {
+    const today = new Date();
+    const floor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round((dt - floor) / 86400000);
+  }
+  function dueColor(dt) {
+    if (!dt) return '#93A1AE';
+    const n = daysUntilDue(dt);
+    return n <= 3 ? '#E2614A' : n <= 10 ? '#D79A2B' : '#93A1AE';
+  }
+  function dueLabel(dt) {
+    if (!dt) return '';
+    const n = daysUntilDue(dt);
+    const when = dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     if (n === 0) return 'due today';
-    if (n === 1) return 'due tomorrow';
-    return 'due in ' + n + ' days';
+    if (n === 1) return 'due tomorrow · ' + when;
+    return 'due ' + when + ' · in ' + n + ' days';
   }
 
   function utilStrip(n) {
@@ -2713,10 +2735,13 @@ tailwind.config = {
     });
     $('balancesList').querySelectorAll('[data-due]').forEach(el => {
       const name = el.getAttribute('data-due');
-      const v = parseInt(el.value, 10);
       accounts[name] = accounts[name] || {};
-      if (!isNaN(v) && v >= 1 && v <= 31) accounts[name].dueDay = v;
-      else delete accounts[name].dueDay;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) {
+        accounts[name].dueDate = el.value;
+        accounts[name].dueDay = Number(el.value.slice(8, 10));   // keeps rolling monthly
+      } else {
+        delete accounts[name].dueDate; delete accounts[name].dueDay;
+      }
     });
     $('balancesList').querySelectorAll('[data-lim]').forEach(el => {
       const name = el.getAttribute('data-lim');
@@ -2753,7 +2778,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 32';
+  const BUILD = '2026-09-16 · 33';
 
   /* =============================================================
      KEEPING THE DATA
@@ -2824,9 +2849,9 @@ tailwind.config = {
           ${isBank ? '' : `<input class="cell num text-[14px]" type="number" inputmode="decimal" step="1" placeholder="Limit" value="${lim ? lim : ''}" data-lim="${esc(n)}" aria-label="${esc(n)} credit limit">`}
         </div>
         ${isBank ? '' : `<div class="flex items-center gap-2 mt-2">
-          <span class="text-[12px] text-muted shrink-0">due day</span>
-          <input class="cell num text-[13px] w-20" type="number" min="1" max="31" placeholder="—" value="${info.dueDay ? info.dueDay : ''}" data-due="${esc(n)}" aria-label="${esc(n)} payment due day">
-          <span class="text-[12px] text-muted flex-1 truncate">${info.dueDay ? esc(dueLabel(info.dueDay)) : 'day of the month the payment is due'}</span>
+          <span class="text-[12px] text-muted shrink-0">due</span>
+          <input class="cell num text-[13px]" type="date" value="${esc(dueValue(info))}" data-due="${esc(n)}" aria-label="${esc(n)} payment due date">
+          <span class="text-[12px] shrink-0" style="color:${dueValue(info) ? dueColor(nextDue(info)) : '#93A1AE'}">${dueValue(info) ? esc(dueLabel(nextDue(info))) : 'not set'}</span>
         </div>`}
         <div class="flex items-center gap-2 mt-2">
           <span class="text-[12px] text-muted shrink-0">as of</span>
