@@ -136,6 +136,14 @@ tailwind.config = {
     <div id="catList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
   </section>
 
+  <section id="recurringSection" class="hidden mt-4">
+    <div class="flex items-baseline justify-between px-1 mb-2">
+      <h2 class="text-[15px] font-bold tracking-tight flex items-center gap-1.5"><span id="recHeadIcon"></span>Repeats every month</h2>
+      <span id="recTotal" class="num text-[13px] text-muted"></span>
+    </div>
+    <div id="recurringList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
+  </section>
+
   <section class="mt-4">
     <h2 class="text-[15px] font-bold tracking-tight px-1 mb-2 flex items-center gap-1.5"><span id="acctHeadIcon"></span>By card and account</h2>
     <div id="acctList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
@@ -1389,6 +1397,7 @@ tailwind.config = {
       pace.classList.add('hidden');
     }
 
+    renderRecurring();
     renderAccounts(list);
     renderCategories(list, spent);
     renderTransactions(list);
@@ -1618,6 +1627,74 @@ tailwind.config = {
 
   /* A checking account has no limit to fill, so its bar shows the month's
      shape instead: what came in against what went out, with the balance. */
+  /* A merchant that charged you in at least two of the last three months,
+     at a steady amount, is a subscription or a bill. Worth seeing together —
+     and worth knowing which ones have not landed yet this month. */
+  function findRecurring() {
+    const months = [viewMonth, shiftMonth(viewMonth, -1), shiftMonth(viewMonth, -2), shiftMonth(viewMonth, -3)];
+    const byKey = {};
+    transactions.forEach(t => {
+      if (t.amount <= 0 || t.xfer) return;
+      const mk = t.date.slice(0, 7);
+      if (months.indexOf(mk) === -1) return;
+      const k = merchantKey(t.desc);
+      if (!k) return;
+      byKey[k] = byKey[k] || { name: t.desc, cat: t.cat, months: {}, amounts: [] };
+      byKey[k].months[mk] = (byKey[k].months[mk] || 0) + t.amount;
+      byKey[k].amounts.push(t.amount);
+      if (mk === viewMonth) byKey[k].name = t.desc;
+    });
+
+    return Object.keys(byKey).map(k => {
+      const e = byKey[k];
+      const seen = Object.keys(e.months);
+      if (seen.length < 2) return null;
+      const typical = e.amounts.slice().sort((a, b) => a - b)[Math.floor(e.amounts.length / 2)];
+      // steady amount: every charge within 25% of the typical one
+      const steady = e.amounts.every(a => Math.abs(a - typical) <= Math.max(typical * 0.25, 2));
+      if (!steady) return null;
+      return {
+        key: k, name: e.name, cat: e.cat, typical: typical,
+        thisMonth: e.months[viewMonth] || 0,
+        landed: !!e.months[viewMonth],
+        count: seen.length
+      };
+    }).filter(Boolean).sort((a, b) => b.typical - a.typical);
+  }
+
+  function renderRecurring() {
+    const list = findRecurring();
+    const sec = $('recurringSection');
+    if (!list.length) { sec.classList.add('hidden'); return; }
+    sec.classList.remove('hidden');
+
+    const expected = list.reduce((s, r) => s + r.typical, 0);
+    const waiting = list.filter(r => !r.landed);
+    $('recHeadIcon').innerHTML = iconSvg('repeat', '#E9EEF3', 15);
+    $('recTotal').textContent = money(expected).replace('.00', '') + ' a month';
+
+    $('recurringList').innerHTML = list.map(r => {
+      const st = catStyle(r.cat);
+      return `<button class="w-full text-left px-4 py-3 active:bg-page flex items-center gap-3" data-cat="${esc(r.cat)}">
+        ${catChip(r.cat, 34)}
+        <div class="min-w-0 flex-1">
+          <p class="text-[16px] font-medium truncate">${esc(r.name)}</p>
+          <p class="num text-[13px] truncate ${r.landed ? 'text-muted' : ''}" ${r.landed ? '' : 'style="color:#D79A2B"'}>${r.landed ? 'charged this month · seen ' + r.count + ' months' : 'not charged yet this month'}</p>
+        </div>
+        <span class="num text-[16px] font-semibold shrink-0">${money(r.landed ? r.thisMonth : r.typical)}</span>
+      </button>`;
+    }).join('') + (waiting.length ? `<p class="px-4 py-2.5 text-[13px] text-muted">${money(waiting.reduce((s, r) => s + r.typical, 0))} of this is still expected before the month is out.</p>` : '');
+  }
+
+  function dueStrip(n) {
+    const info = accounts[n] || {};
+    if (!info.dueDay) return '';
+    const days = daysUntilDue(info.dueDay);
+    if (days > 10) return '';
+    const col = days <= 3 ? '#E2614A' : '#D79A2B';
+    return `<p class="num text-[12px] font-semibold mt-1 pl-[42px]" style="color:${col}">${esc(dueLabel(info.dueDay))}</p>`;
+  }
+
   function bankStrip(n, m) {
     const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
     const info = accounts[n] || {};
@@ -1633,6 +1710,22 @@ tailwind.config = {
       </div>
       <span class="num text-[12px] shrink-0 font-semibold" style="color:#35C08A">${money(now).replace('.00', '')}</span>
     </div>`;
+  }
+
+  // How far off the next due date is, from today.
+  function daysUntilDue(day) {
+    const now = new Date();
+    let d = new Date(now.getFullYear(), now.getMonth(), day);
+    if (d < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+      d = new Date(now.getFullYear(), now.getMonth() + 1, day);
+    }
+    return Math.round((d - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+  }
+  function dueLabel(day) {
+    const n = daysUntilDue(day);
+    if (n === 0) return 'due today';
+    if (n === 1) return 'due tomorrow';
+    return 'due in ' + n + ' days';
   }
 
   function utilStrip(n) {
@@ -1663,7 +1756,7 @@ tailwind.config = {
             <span class="num text-[16px] font-semibold shrink-0">${money(map[n].out)}</span>
           </div>
           <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · ' + money(map[n].paid) + ' paid' : ''}${owedLabel(n)}</p>
-          ${utilStrip(n)}${bankStrip(n, map[n])}
+          ${dueStrip(n)}${utilStrip(n)}${bankStrip(n, map[n])}
         </button>`).join('');
     }
 
@@ -2207,6 +2300,11 @@ tailwind.config = {
     save(); refreshCatOptions(); render(); renderAcctSheet();
     toast(n + ' moved to ' + name);
   };
+  $('recurringList').addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-cat]');
+    if (btn) openCatSheet(btn.getAttribute('data-cat'));
+  });
+
   $('catList').addEventListener('click', function (e) {
     const btn = e.target.closest('[data-cat]');
     if (btn) openCatSheet(btn.getAttribute('data-cat'));
@@ -2613,6 +2711,13 @@ tailwind.config = {
       else delete info.asOfTime;
       accounts[name] = info;
     });
+    $('balancesList').querySelectorAll('[data-due]').forEach(el => {
+      const name = el.getAttribute('data-due');
+      const v = parseInt(el.value, 10);
+      accounts[name] = accounts[name] || {};
+      if (!isNaN(v) && v >= 1 && v <= 31) accounts[name].dueDay = v;
+      else delete accounts[name].dueDay;
+    });
     $('balancesList').querySelectorAll('[data-lim]').forEach(el => {
       const name = el.getAttribute('data-lim');
       const v = parseFloat(el.value);
@@ -2648,7 +2753,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-15 · 31';
+  const BUILD = '2026-09-15 · 32';
 
   /* =============================================================
      KEEPING THE DATA
@@ -2718,6 +2823,11 @@ tailwind.config = {
           <input class="cell num text-[14px]" type="number" inputmode="decimal" step="0.01" placeholder="${isBank ? 'Balance' : 'Owed'}" value="${bd.start ? bd.start : ''}" data-bal="${esc(n)}" aria-label="${esc(n)} balance">
           ${isBank ? '' : `<input class="cell num text-[14px]" type="number" inputmode="decimal" step="1" placeholder="Limit" value="${lim ? lim : ''}" data-lim="${esc(n)}" aria-label="${esc(n)} credit limit">`}
         </div>
+        ${isBank ? '' : `<div class="flex items-center gap-2 mt-2">
+          <span class="text-[12px] text-muted shrink-0">due day</span>
+          <input class="cell num text-[13px] w-20" type="number" min="1" max="31" placeholder="—" value="${info.dueDay ? info.dueDay : ''}" data-due="${esc(n)}" aria-label="${esc(n)} payment due day">
+          <span class="text-[12px] text-muted flex-1 truncate">${info.dueDay ? esc(dueLabel(info.dueDay)) : 'day of the month the payment is due'}</span>
+        </div>`}
         <div class="flex items-center gap-2 mt-2">
           <span class="text-[12px] text-muted shrink-0">as of</span>
           <input class="cell num text-[13px]" type="date" value="${esc(info.asOf || todayISO())}" data-asof="${esc(n)}" aria-label="${esc(n)} balance date">
