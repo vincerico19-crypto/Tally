@@ -1619,10 +1619,12 @@ tailwind.config = {
   function owedLabel(n) {
     const info = accounts[n] || {};
     if (!(Number(info.balance) > 0)) return '';
-    const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
-    if (isBank) return '';                       // shown on its own bar below
+    if (acctIcon(n) === 'bank' || acctIcon(n) === 'vault') return '';   // shown on its own bar
     const now = balanceDetail(n).now;
-    return ` · <span class="font-semibold" style="color:${isBank ? '#35C08A' : '#E9EEF3'}">${money(now)} ${isBank ? 'balance' : 'owed'}</span>`;
+    const lim = Number(info.limit) || 0;
+    const pct = lim > 0 ? (now / lim) * 100 : 0;
+    const col = lim > 0 ? (pct >= 70 ? '#E2614A' : pct >= 30 ? '#D79A2B' : '#35C08A') : '#E9EEF3';
+    return ` · <span class="font-semibold" style="color:${col}">${money(now)} owed</span>`;
   }
 
   /* A checking account has no limit to fill, so its bar shows the month's
@@ -1692,7 +1694,12 @@ tailwind.config = {
     if (!dt) return '';
     const col = dueColor(dt);
     const soon = daysUntilDue(dt) <= 10;
-    return `<p class="num text-[12px] ${soon ? 'font-semibold' : ''} mt-1 pl-[42px]" style="color:${col}">${esc(dueLabel(dt))}</p>`;
+    return `<p class="mt-1.5 pl-[42px]">
+      <span class="num text-[12px] font-semibold inline-flex items-center gap-1.5 rounded-full px-2 py-0.5"
+        style="color:${col};background:${col}${soon ? '26' : '14'}">
+        <span class="rounded-full" style="width:5px;height:5px;background:${col}"></span>${esc(dueLabel(dt))}
+      </span>
+    </p>`;
   }
 
   function bankStrip(n, m) {
@@ -2778,7 +2785,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-16 · 33';
+  const BUILD = '2026-09-16 · 34';
 
   /* =============================================================
      KEEPING THE DATA
