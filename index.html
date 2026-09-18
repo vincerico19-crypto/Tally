@@ -1466,7 +1466,34 @@ tailwind.config = {
       if (t.amount > 0) charges += t.amount;
       else payments += Math.abs(t.amount);          // a refund lands the same way
     });
+    /* A payment logged on a card's own statement never mentions the account it
+       came from, so it would otherwise never leave the bank. Attribute those to
+       the account you pay from — unless the same payment is already logged on
+       the bank side, in which case it is counted once. */
+    if (isPayingBank(name)) {
+      const bankSide = transactions.filter(t => t.xfer && (t.acct || 'Unassigned') === name);
+      transactions.forEach(t => {
+        if (!t.xfer || t.amount <= 0) return;
+        const on = t.acct || 'Unassigned';
+        if (on === name) return;                                  // already counted above
+        if (acctIcon(on) === 'bank' || acctIcon(on) === 'vault') return;
+        const counts = (stamp && t.at) ? (t.at > stamp) : (t.date > asOf);
+        if (!counts) return;
+        const alreadyOnBank = bankSide.some(b =>
+          Math.abs(Math.abs(b.amount) - Math.abs(t.amount)) < 0.005 && daysApart(b.date, t.date) <= 3);
+        if (!alreadyOnBank) payments += Math.abs(t.amount);
+      });
+    }
+
     return { start, asOf, charges, payments, now: Math.max(start + charges - payments, 0) };
+  }
+
+  // The account card payments come out of: the primary one, or the only bank.
+  function isPayingBank(name) {
+    if (acctIcon(name) !== 'bank' && acctIcon(name) !== 'vault') return false;
+    if (settings.primaryAcct) return settings.primaryAcct === name;
+    const banks = Object.keys(accounts).filter(a => acctIcon(a) === 'bank' || acctIcon(a) === 'vault');
+    return banks.length === 1 && banks[0] === name;
   }
 
   // A slim bar on the dashboard when you have told Tally the card's limit.
@@ -2785,7 +2812,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-17 · 35';
+  const BUILD = '2026-09-17 · 36';
 
   /* =============================================================
      KEEPING THE DATA
