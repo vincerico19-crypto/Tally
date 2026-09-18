@@ -484,7 +484,7 @@ tailwind.config = {
   function ocrFix(s) {
     return String(s)
       .replace(/\u00a0/g, ' ')
-      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/[\u2013\u2014\u2212\u2012]/g, '-')
       .replace(/[\u2018\u2019\u2032`\u00b4]/g, "'")
       .replace(/[\u201c\u201d]/g, '"')
       .replace(/[\u2022\u00b7\u25cf\u2219]/g, ' ')
@@ -816,7 +816,7 @@ tailwind.config = {
     [/\b(cash ?app)\b/i, 'Cash App'],
     [/\b(savings)\b/i, 'Savings'],
     [/\b(checking|debit card|debit)\b/i, 'Checking'],
-    [/\b(cash)\b/i, 'Cash']
+    [/^\s*cash\s*$/i, 'Cash']
   ];
   function guessAccount(text) {
     for (const [re, name] of ACCT_RULES) if (re.test(text)) return name;
@@ -889,7 +889,12 @@ tailwind.config = {
     // A card name anywhere in the paste (a statement header, say) applies to the whole batch.
     const batchAcct = guessAccount(raw);
     let runAcct = batchAcct;
-    const HEADER_LINE = /\b(statement|activity|account summary|recent transactions?|posted transactions?|pending transactions?|period|summary|history|ending in|card \d)\b/i;
+    const HEADER_WORDS = /\b(statement|activity|account summary|recent transactions?|posted transactions?|pending transactions?|statement period|summary|history|ending in|card \d)\b/i;
+    const HEADER_LINE = function (line) {
+      if (!HEADER_WORDS.test(line)) return false;
+      if (/\b(credit|reward|refund|payment|purchase|charge|fee|interest)\b/i.test(line)) return false;
+      return line.split(/\s+/).length <= 4;
+    };
 
     /* Screenshots of a bank app carry a lot that is not a transaction:
        the phone status bar, tab-bar labels, reward badges, and the card
@@ -905,6 +910,8 @@ tailwind.config = {
         .replace(/\b(earn|earned)?\s*\d[\d,]*\s*(miles|points|pts)\b/gi, ' ')
         .replace(/\b[A-Z][a-zA-Z]*\.?\s*[A-Z]?\s*[.\u00b7\u2026]{2,}\s*\d{3,4}\b/g, ' ')   // "Noemy R...8681"
         .replace(/[.\u2026]{2,}\s*\d{3,4}\b/g, ' ')
+        .replace(/([^\d])[.\u2026]+\s*\d{4}\b/g, '$1 ')        // "…7752" with one ellipsis
+        .replace(/\b[A-Z][a-z]+\s+[A-Z]\.?\s*$/g, ' ')          // the cardholder left behind
         .replace(/\b(ending in|ending)\s*\d{4}\b/gi, ' ')
         .replace(/[\u203a\u00bb\u2039\u00ab>\u2192]+/g, ' ')
         .replace(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\b,?/gi, ' ')
@@ -920,7 +927,7 @@ tailwind.config = {
       'grocery': 'Groceries', 'groceries': 'Groceries', 'supermarket': 'Groceries',
       'health care': 'Health', 'healthcare': 'Health', 'medical': 'Health', 'pharmacy': 'Health',
       'entertainment': 'Entertainment', 'internet': 'Utilities', 'phone/cable': 'Utilities', 'utilities': 'Utilities', 'phone': 'Utilities',
-      'insurance': 'Insurance', 'payment/credit': 'Transfer', 'payment': 'Transfer', 'credit': 'Transfer',
+      'insurance': 'Insurance', 'payment/credit': 'Transfer', 'payment & credit': 'Transfer',
       'fee/interest charge': 'Debt & Fees', 'fees': 'Debt & Fees', 'interest': 'Debt & Fees',
       'other services': 'Uncategorized', 'professional services': 'Uncategorized', 'other': 'Uncategorized', 'services': 'Uncategorized',
       'personal care': 'Personal Care', 'p2p': 'P2P Transfers', 'person to person': 'P2P Transfers', 'home improvement': 'Housing', 'home': 'Housing', 'rent': 'Rent', 'travel': 'Travel', 'education': 'Education', 'pets': 'Pets', 'gifts': 'Gifts',
@@ -986,7 +993,7 @@ tailwind.config = {
       let s = g.s;
       if (NOT_A_TX.test(s) && (s.match(/\d[\d,]*(?:\.\d{1,2})?/g) || []).length <= 1) { pending.length = 0; return; }
       if (SUB_LINE.test(s)) return;
-      if (/^(date|description|amount|category|transaction|merchant|debit|credit)\b/i.test(s) && !findAmount(s)) return;
+      if (/^(date|description|desc|amount|category|transaction|merchant|debit|credit|balance|type|payee)(\s*[,|\t]\s*(date|description|desc|amount|category|transaction|merchant|debit|credit|balance|type|payee))*$/i.test(s.trim()) && !findAmount(s)) return;
 
       // Real columns (tab- or comma-separated): date, description, category, amount
       const cols = line.indexOf('\t') > -1 ? line.split('\t') : (line.split(',').length === 4 ? line.split(',') : null);
@@ -1021,7 +1028,7 @@ tailwind.config = {
           && !/\b(loan|paymt|pmt|payment|purchase|withdrawal|deposit|transfer|fee|charge|interest)\b/i.test(s)
           && (!bankMode || headIsBank)          // a card name here is a payment out
           && s.split(/\s+/).length <= 5;
-        if (looksLikeHeading || HEADER_LINE.test(s)) {
+        if (looksLikeHeading || HEADER_LINE(s)) {
           if (headAcct !== 'Unassigned') runAcct = headAcct;
           lastWasDesc = false;
           return;
@@ -2824,7 +2831,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-18 · 37';
+  const BUILD = '2026-09-18 · 38';
 
   /* =============================================================
      KEEPING THE DATA
