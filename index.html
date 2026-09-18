@@ -1104,12 +1104,12 @@ tailwind.config = {
         // Amount on its own line: it belongs to the oldest merchant still waiting,
         // and it keeps the date that merchant was listed under.
         const p = pending.shift();
-        if (p) { desc = p.desc; cat = p.cat; queuedDate = p.date; }
+        if (p) { desc = p.desc; cat = p.cat; queuedDate = p.date || todayISO(); }
       } else if (pending.length) {
         const p = pending.shift();
         desc = (p.desc + ' ' + desc).trim();
         cat = p.cat;
-        queuedDate = p.date;
+        queuedDate = p.date || todayISO();
         pending.length = 0;
       }
       if (!cat && heldCat) { cat = heldCat; heldCat = null; }
@@ -2785,7 +2785,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-16 · 34';
+  const BUILD = '2026-09-17 · 35';
 
   /* =============================================================
      KEEPING THE DATA
