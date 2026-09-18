@@ -603,7 +603,7 @@ tailwind.config = {
   /* Moving your own money is not spending. A card payment from checking is the
      same dollars you already logged as charges on the card — counting both
      would double your month. These get flagged and kept out of the totals. */
-  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account \d|from account \d|to account|from account|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer)\b/i;
+  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account \d|from account \d|to account|from account|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer|cash ?back reward|statement credit|rewards? credit|rewards? redemption|redeem(ed)? rewards?|credit-cash ?back|rewards? applied|cash ?back applied|credit balance refund)\b/i;
   function looksLikeTransfer(text) {
     if (/\bpayroll|direct dep|paycheck\b/i.test(text)) return false;   // that is real income
     return XFER_HINTS.test(text);
@@ -778,6 +778,7 @@ tailwind.config = {
     [/\b(starbucks|coffee|cafe|dunkin|restaurant|taco|pizza|burger|grill|bbq|whataburger|chick-?fil-?a|mcdonald|chipotle|panda|sushi|bar ?& ?grill|doordash|grubhub|uber eats)\b/i, 'Dining'],
     [/\b(cvs|walgreens|pharmacy|doctor|dental|dentist|clinic|hospital|medical|urgent care|optometr|vision|copay)\b/i, 'Health'],
     [/\b(amazon|target|best buy|home depot|lowe'?s|ikea|ross|marshalls|tj ?maxx|old navy|nike|shein|etsy|ebay)\b/i, 'Shopping'],
+    [/\b(cash ?back reward|statement credit|rewards? credit|rewards? redemption|credit-cash ?back)\b/i, 'Transfer'],
     [/\b(zelle|venmo|cash ?app|apple cash|square cash|remitly|western union|moneygram|wise transfer|sendwave|paypal)\b/i, 'P2P Transfers'],
     [/\b(insurance|geico|progressive|state farm|allstate|usaa|premium)\b/i, 'Insurance'],
     [/\b(church|tithe|offering|donation|charity|gofundme|red cross|lutheran|baptist|methodist|catholic|presbyterian|parish|chapel|ministr|diocese|synod)\b/i, 'Giving'],
@@ -2831,7 +2832,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-18 · 38';
+  const BUILD = '2026-09-18 · 39';
 
   /* =============================================================
      KEEPING THE DATA
