@@ -2109,7 +2109,7 @@ tailwind.config = {
         ? `<span class="shrink-0 grid place-items-center rounded-full border-2 ${on ? 'bg-accent border-accent' : 'border-line bg-card'}" style="width:26px;height:26px">
              ${on ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : ''}
            </span>`
-        : (t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:#93A1AE1A">${iconSvg('repeat', '#93A1AE', 17)}</span>` : t.amount < 0 ? catChip('Income', 30) : catChip(t.cat, 30));
+        : (t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 17)}</span>` : t.amount < 0 ? catChip('Income', 30) : catChip(t.cat, 30));
       return `
       <div class="flex items-center gap-3 px-5 py-3 border-b border-line active:bg-page ${on ? 'bg-page/60' : ''}" data-${selectMode ? 'sel' : 'edit'}="${t.id}">
         ${mark}
@@ -2138,7 +2138,7 @@ tailwind.config = {
     editId = id;
     editDir = t.xfer ? 'xfer' : (t.amount < 0 ? 'in' : 'out');
     $('editHead').innerHTML = (editDir === 'xfer'
-      ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:#93A1AE1A">${iconSvg('repeat', '#93A1AE', 17)}</span>`
+      ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 17)}</span>`
       : catChip(editDir === 'in' ? 'Income' : t.cat, 30)) +
       `<h3 class="text-[16px] font-semibold truncate">Edit transaction</h3>`;
     $('editDate').value = t.date;
@@ -2224,7 +2224,7 @@ tailwind.config = {
     const sorted = list.slice().sort((a, b) => sortDesc ? (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) : (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
     box.innerHTML = sorted.map(t => `
       <div class="flex items-center gap-3 px-4 py-3 active:bg-page" data-edit="${t.id}">
-        ${t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:34px;height:34px;background:#93A1AE1A">${iconSvg('repeat', '#93A1AE', 19)}</span>` : t.amount < 0 ? catChip('Income', 34) : catChip(t.cat, 34)}
+        ${t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:34px;height:34px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 19)}</span>` : t.amount < 0 ? catChip('Income', 34) : catChip(t.cat, 34)}
         <div class="min-w-0 flex-1">
           <p class="text-[16px] font-medium truncate">${esc(t.desc)}</p>
           <p class="num text-[13px] text-muted truncate">${esc(dayLabel(t.date))} · ${t.xfer ? 'Payment' : esc(t.cat)}${t.acct && t.acct !== 'Unassigned' ? ' · ' + esc(t.acct) : ''}</p>
@@ -2840,7 +2840,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 41';
+  const BUILD = '2026-09-19 · 42';
 
   /* =============================================================
      KEEPING THE DATA
