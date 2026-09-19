@@ -608,9 +608,11 @@ tailwind.config = {
   /* Moving your own money is not spending. A card payment from checking is the
      same dollars you already logged as charges on the card — counting both
      would double your month. These get flagged and kept out of the totals. */
-  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account \d|from account \d|to account|from account|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer|cash ?back reward|statement credit|rewards? credit|rewards? redemption|redeem(ed)? rewards?|credit-cash ?back|rewards? applied|cash ?back applied|credit balance refund)\b/i;
+  const XFER_HINTS = /\b(payment thank you|thank you payment|autopay|auto ?pay|card ?payment|payment to (card|credit)|credit card (pmt|payment)|online payment|bill ?pay|epay|payment received|transfer (to|from)|xfer|internal transfer|to savings|from savings|move to|principal payment|statement payment|line of credit|loc payment|transfer loc|loan payment|to loc|to account \d|from account \d|to account|from account|to account savings|from account savings|to savings|from savings|savings transfer|to checking|from checking|internal xfer|between accounts|acct transfer|electronic payment|online payment|scheduled payment|bill payment|card payment|cash ?back reward|statement credit|rewards? credit|rewards? redemption|redeem(ed)? rewards?|credit-cash ?back|rewards? applied|cash ?back applied|credit balance refund)\b/i;
   function looksLikeTransfer(text) {
     if (/\bpayroll|direct dep|paycheck\b/i.test(text)) return false;   // that is real income
+    // "Credit-Travel Reward", "Credit-Cash Back Reward", "Credit-Points Redemption"
+    if (/\bcredit\b/i.test(text) && /\breward|redemption|redeem|cash ?back|points|miles\b/i.test(text)) return true;
     return XFER_HINTS.test(text);
   }
 
@@ -784,7 +786,8 @@ tailwind.config = {
     [/\b(starbucks|coffee|cafe|dunkin|restaurant|taco|pizza|burger|grill|bbq|whataburger|chick-?fil-?a|mcdonald|chipotle|panda|sushi|bar ?& ?grill|doordash|grubhub|uber eats)\b/i, 'Dining'],
     [/\b(cvs|walgreens|pharmacy|doctor|dental|dentist|clinic|hospital|medical|urgent care|optometr|vision|copay)\b/i, 'Health'],
     [/\b(amazon|target|best buy|home depot|lowe'?s|ikea|ross|marshalls|tj ?maxx|old navy|nike|shein|etsy|ebay)\b/i, 'Shopping'],
-    [/\b(cash ?back reward|statement credit|rewards? credit|rewards? redemption|credit-cash ?back)\b/i, 'Transfer'],
+    [/\bcredit[- ]\w*\s*(back\s*)?(reward|redemption)s?\b/i, 'Transfer'],
+    [/\b(cash ?back reward|statement credit|rewards? credit|rewards? redemption|electronic payment|online payment|card payment)\b/i, 'Transfer'],
     [/\b(zelle|venmo|cash ?app|apple cash|square cash|remitly|western union|moneygram|wise transfer|sendwave|paypal)\b/i, 'P2P Transfers'],
     [/\b(insurance|geico|progressive|state farm|allstate|usaa|premium)\b/i, 'Insurance'],
     [/\b(church|tithe|offering|donation|charity|gofundme|red cross|lutheran|baptist|methodist|catholic|presbyterian|parish|chapel|ministr|diocese|synod)\b/i, 'Giving'],
@@ -934,7 +937,7 @@ tailwind.config = {
       'grocery': 'Groceries', 'groceries': 'Groceries', 'supermarket': 'Groceries',
       'health care': 'Health', 'healthcare': 'Health', 'medical': 'Health', 'pharmacy': 'Health',
       'entertainment': 'Entertainment', 'internet': 'Utilities', 'phone/cable': 'Utilities', 'utilities': 'Utilities', 'phone': 'Utilities',
-      'insurance': 'Insurance', 'payment/credit': 'Transfer', 'payment & credit': 'Transfer',
+      'insurance': 'Insurance', 'payment/credit': 'Transfer', 'payment & credit': 'Transfer', 'payment': 'Transfer', 'payments': 'Transfer',
       'fee/interest charge': 'Debt & Fees', 'fees': 'Debt & Fees', 'interest': 'Debt & Fees',
       'other services': 'Uncategorized', 'professional services': 'Uncategorized', 'other': 'Uncategorized', 'services': 'Uncategorized',
       'personal care': 'Personal Care', 'p2p': 'P2P Transfers', 'person to person': 'P2P Transfers', 'home improvement': 'Housing', 'home': 'Housing', 'rent': 'Rent', 'travel': 'Travel', 'education': 'Education', 'pets': 'Pets', 'gifts': 'Gifts',
@@ -1211,12 +1214,28 @@ tailwind.config = {
   function daysApart(a, b) {
     return Math.abs((new Date(a + 'T00:00:00') - new Date(b + 'T00:00:00')) / 86400000);
   }
+  // OCR renders the same merchant differently between screenshots
+  // ("Fair Mart" / "Faid Maart"), so near-identical names count as the same.
+  function closeEnough(a, b) {
+    if (a === b) return true;
+    if (!a || !b || a.length < 5 || b.length < 5) return false;
+    if (Math.abs(a.length - b.length) > 2) return false;
+    let d = 0, i = 0, j = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++d > 2) return false;
+      if (a[i + 1] === b[j]) i++;
+      else if (a[i] === b[j + 1]) j++;
+      else { i++; j++; }
+    }
+    return d + (a.length - i) + (b.length - j) <= 2;
+  }
   function isDuplicate(r) {
     const key = merchantKey(r.desc);
     return transactions.some(t =>
       Math.abs(Math.abs(t.amount) - r.amount) < 0.005 &&
-      merchantKey(t.desc) === key &&
-      daysApart(t.date, r.date) <= 3);
+      closeEnough(merchantKey(t.desc), key) &&
+      daysApart(t.date, r.date) <= 7);
   }
 
   function renderReviewSummaryOnly() {
@@ -2474,7 +2493,7 @@ tailwind.config = {
     draft = [];
     rows.forEach(r => {
       const key = merchantKey(r.desc);
-      const twinHere = seen.some(o => o.key === key && Math.abs(o.amount - r.amount) < 0.005 && daysApart(o.date, r.date) <= 3);
+      const twinHere = seen.some(o => closeEnough(o.key, key) && Math.abs(o.amount - r.amount) < 0.005 && daysApart(o.date, r.date) <= 7);
       if (isDuplicate(r) || twinHere) draftDupes.push(r);
       else { draft.push(r); seen.push({ key: key, amount: r.amount, date: r.date }); }
     });
@@ -2840,7 +2859,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 42';
+  const BUILD = '2026-09-19 · 43';
 
   /* =============================================================
      KEEPING THE DATA
