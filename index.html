@@ -292,7 +292,6 @@ tailwind.config = {
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
     <div id="editHead" class="flex items-center gap-2.5 min-w-0"></div>
-    <button data-editclose class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
   <div class="px-5 py-4 space-y-2">
     <div class="flex gap-2">
@@ -2488,7 +2487,10 @@ tailwind.config = {
   $('scrim').onclick = closeSheets;
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheets);
   // Tapping the handle closes too, for anyone who would rather tap than swipe.
-  document.querySelectorAll('.grab').forEach(g => g.addEventListener('click', closeSheets));
+  document.querySelectorAll('.grab').forEach(g => g.addEventListener('click', function () {
+    // the edit sheet sits on top of another, so it only closes itself
+    if (g.closest('#editSheet')) closeEdit(); else closeSheets();
+  }));
 
   /* Drag a sheet down to put it away. The handle and header always drag; the
      body only drags when it is already scrolled to the top, so the drag never
@@ -2529,7 +2531,7 @@ tailwind.config = {
       if (scrimEl) scrimEl.style.opacity = '';
       const far = dy > Math.min(sheet.offsetHeight * 0.3, 190);
       const flick = dy > 80 && (Date.now() - startT) < 240;
-      if (far || flick) closeSheets();
+      if (far || flick) { if (sheet.id === 'editSheet') closeEdit(); else closeSheets(); }
       dy = 0;
     }
     sheet.addEventListener('touchend', release);
@@ -2946,7 +2948,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 49';
+  const BUILD = '2026-09-19 · 50';
 
   /* =============================================================
      KEEPING THE DATA
