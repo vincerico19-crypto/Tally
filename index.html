@@ -427,7 +427,12 @@ tailwind.config = {
     try { const ac = JSON.parse(localStorage.getItem(ACCTS_KEY) || '{}'); if (ac && typeof ac === 'object') accounts = ac; } catch (e) {}
     try { const cb = JSON.parse(localStorage.getItem(CATBUD_KEY) || '{}'); if (cb && typeof cb === 'object') catBudgets = cb; } catch (e) {}
     try { const st = JSON.parse(localStorage.getItem(SET_KEY) || 'null'); if (st && typeof st === 'object') settings = Object.assign({ countDeposits: true, primaryAcct: '' }, st); } catch (e) {}
-    transactions.forEach(t => { if (!t.acct) t.acct = 'Unassigned'; });
+    transactions.forEach(t => {
+      if (!t.acct) t.acct = 'Unassigned';
+      // Rows filed under Transfer before the payment rules existed are moved
+      // money, not spending. Catch them up so they leave the budget total.
+      if (!t.xfer && (t.cat === 'Transfer' || looksLikeTransfer(t.desc || ''))) t.xfer = true;
+    });
   }
   function save() {
     try {
@@ -2832,7 +2837,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-18 · 39';
+  const BUILD = '2026-09-18 · 40';
 
   /* =============================================================
      KEEPING THE DATA
