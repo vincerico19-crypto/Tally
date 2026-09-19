@@ -185,7 +185,7 @@ tailwind.config = {
   <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
 
 
-  <div class="px-5 pt-1 pb-3 border-b border-line flex items-center justify-between shrink-0">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between shrink-0">
     <h3 id="pasteTitle" class="text-[16px] font-semibold">Paste anything</h3>
     <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60">Close</button>
   </div>
@@ -245,7 +245,7 @@ tailwind.config = {
 <div id="monthSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[88vh] flex flex-col">
   <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
 
-  <div class="px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
     <div id="monthSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
     <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
@@ -257,7 +257,7 @@ tailwind.config = {
 <div id="catSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[88vh] flex flex-col">
   <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
 
-  <div class="px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
     <div id="catSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
     <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
@@ -269,7 +269,7 @@ tailwind.config = {
 <div id="acctSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[88vh] flex flex-col">
   <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
 
-  <div class="px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
     <div id="acctSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
     <button id="selectAcct" class="text-[15px] font-medium px-2 py-1 active:opacity-60 shrink-0">Select</button>
     <button id="renameAcct" class="text-[15px] font-medium px-2 py-1 active:opacity-60 shrink-0">Rename</button>
@@ -294,7 +294,7 @@ tailwind.config = {
 <div id="editSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl border-t border-line flex flex-col">
   <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
 
-  <div class="px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
     <div id="editHead" class="flex items-center gap-2.5 min-w-0"></div>
     <button data-editclose class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
@@ -321,7 +321,7 @@ tailwind.config = {
 <div id="dataSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line max-h-[92vh] flex flex-col">
   <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
 
-  <div class="px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
     <h3 class="text-[16px] font-semibold">Backup &amp; settings</h3>
     <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60">Close</button>
   </div>
@@ -2497,13 +2497,13 @@ tailwind.config = {
      body only drags when it is already scrolled to the top, so the drag never
      fights the list. */
   document.querySelectorAll('.sheet').forEach(sheet => {
-    let startY = 0, startT = 0, dy = 0, dragging = false, scroller = null;
+    let startY = 0, startT = 0, dy = 0, dragging = false;
 
+    /* Only the handle and the header start a dismiss. The body is for
+       scrolling, so a flick through a long list never throws the sheet away. */
     function canDrag(target) {
-      if (target.closest('.grab')) return true;
-      if (target.closest('input, textarea, select, button')) return false;
-      scroller = target.closest('.overflow-y-auto');
-      return !scroller || scroller.scrollTop <= 0;
+      if (target.closest('button, input, textarea, select, a')) return false;
+      return !!target.closest('.grab, .sheet-head');
     }
 
     sheet.addEventListener('touchstart', e => {
@@ -2515,9 +2515,9 @@ tailwind.config = {
 
     sheet.addEventListener('touchmove', e => {
       if (!dragging) return;
-      dy = e.touches[0].clientY - startY;
-      if (dy < 0) { dy = 0; return; }
-      if (scroller && scroller.scrollTop > 0) { dragging = false; sheet.style.transform = ''; return; }
+      const raw = e.touches[0].clientY - startY;
+      if (raw < 10) { dy = 0; sheet.style.transform = ''; return; }   // slack before it moves
+      dy = raw - 10;
       sheet.style.transform = 'translateY(' + dy + 'px)';
       const s = $('scrim');
       if (s) s.style.opacity = String(Math.max(1 - dy / (sheet.offsetHeight || 600), 0));
@@ -2530,8 +2530,8 @@ tailwind.config = {
       sheet.style.transform = '';
       const scrimEl = $('scrim');
       if (scrimEl) scrimEl.style.opacity = '';
-      const far = dy > Math.min(sheet.offsetHeight * 0.28, 170);
-      const flick = dy > 60 && (Date.now() - startT) < 260;
+      const far = dy > Math.min(sheet.offsetHeight * 0.3, 190);
+      const flick = dy > 80 && (Date.now() - startT) < 240;
       if (far || flick) closeSheets();
       dy = 0;
     }
@@ -2949,7 +2949,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 46';
+  const BUILD = '2026-09-19 · 47';
 
   /* =============================================================
      KEEPING THE DATA
