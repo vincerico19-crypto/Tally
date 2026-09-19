@@ -182,12 +182,11 @@ tailwind.config = {
 
 <!-- ============ PASTE SHEET: step 1 paste, step 2 review ============ -->
 <div id="pasteSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[92vh] flex flex-col">
-  <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
 
-  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between shrink-0">
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center shrink-0">
     <h3 id="pasteTitle" class="text-[16px] font-semibold">Paste anything</h3>
-    <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60">Close</button>
   </div>
 
   <!-- STEP 1 -->
@@ -243,11 +242,10 @@ tailwind.config = {
 
 <!-- ============ MONTH BREAKDOWN ============ -->
 <div id="monthSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[88vh] flex flex-col">
-  <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
     <div id="monthSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
-    <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
   <div id="monthSheetBody" class="flex-1 overflow-y-auto hide-scroll"></div>
   <div class="safe-b shrink-0"></div>
@@ -255,11 +253,10 @@ tailwind.config = {
 
 <!-- ============ CATEGORY DETAIL SHEET ============ -->
 <div id="catSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[88vh] flex flex-col">
-  <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
     <div id="catSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
-    <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
   <div id="catSheetBody" class="flex-1 overflow-y-auto hide-scroll"></div>
   <div class="safe-b shrink-0"></div>
@@ -267,13 +264,12 @@ tailwind.config = {
 
 <!-- ============ ACCOUNT DETAIL SHEET ============ -->
 <div id="acctSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[88vh] flex flex-col">
-  <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
     <div id="acctSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
     <button id="selectAcct" class="text-[15px] font-medium px-2 py-1 active:opacity-60 shrink-0">Select</button>
     <button id="renameAcct" class="text-[15px] font-medium px-2 py-1 active:opacity-60 shrink-0">Rename</button>
-    <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60 shrink-0">Close</button>
   </div>
   <div id="acctSheetBody" class="flex-1 overflow-y-auto hide-scroll"></div>
   <div id="acctSelectBar" class="hidden px-4 pt-3 border-t border-line bg-page/70 shrink-0">
@@ -292,7 +288,7 @@ tailwind.config = {
 
 <!-- ============ EDIT ONE TRANSACTION ============ -->
 <div id="editSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl border-t border-line flex flex-col">
-  <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
     <div id="editHead" class="flex items-center gap-2.5 min-w-0"></div>
@@ -319,11 +315,10 @@ tailwind.config = {
 
 <!-- ============ DATA SHEET ============ -->
 <div id="dataSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line max-h-[92vh] flex flex-col">
-  <div class="grab shrink-0 pt-2.5 pb-1 flex justify-center touch-none cursor-grab"><span class="block w-10 h-1 rounded-full bg-white/25"></span></div>
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
     <h3 class="text-[16px] font-semibold">Backup &amp; settings</h3>
-    <button data-close class="text-[15px] text-muted px-2 py-1 active:opacity-60">Close</button>
   </div>
   <div class="px-5 py-4 overflow-y-auto hide-scroll">
     <label class="block text-[15px] font-bold tracking-tight mb-1.5" for="budgetInput">Budget for <span id="budgetMonthName">this month</span></label>
@@ -2492,6 +2487,8 @@ tailwind.config = {
   $('editBudget').onclick = () => { $('dataMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); setTimeout(() => $('budgetInput').focus(), 250); };
   $('scrim').onclick = closeSheets;
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheets);
+  // Tapping the handle closes too, for anyone who would rather tap than swipe.
+  document.querySelectorAll('.grab').forEach(g => g.addEventListener('click', closeSheets));
 
   /* Drag a sheet down to put it away. The handle and header always drag; the
      body only drags when it is already scrolled to the top, so the drag never
@@ -2949,7 +2946,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 48';
+  const BUILD = '2026-09-19 · 49';
 
   /* =============================================================
      KEEPING THE DATA
