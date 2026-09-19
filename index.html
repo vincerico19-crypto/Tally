@@ -1083,8 +1083,13 @@ tailwind.config = {
         // a second transaction that does not exist.
         if (lastWasDesc && pending.length) {
           const last = pending[pending.length - 1];
-          if ((last.desc + ' ' + leftover).length <= 90) last.desc = (last.desc + ' ' + leftover).trim();
-          return;
+          // ...unless one of them is a payment and the other is a shop; those
+          // are two separate rows that happen to sit next to each other.
+          const split = looksLikeTransfer(last.desc) !== looksLikeTransfer(leftover);
+          if (!split && (last.desc + ' ' + leftover).length <= 90) {
+            last.desc = (last.desc + ' ' + leftover).trim();
+            return;
+          }
         }
 
         pending.push({ desc: leftover, cat: heldCat, date: lastDate });
@@ -1124,7 +1129,12 @@ tailwind.config = {
         if (p) { desc = p.desc; cat = p.cat; queuedDate = p.date || todayISO(); }
       } else if (pending.length) {
         const p = pending.shift();
-        desc = (p.desc + ' ' + desc).trim();
+        // "Electronic Payment" and "Ezschool" are two rows, not one name
+        if (looksLikeTransfer(p.desc) !== looksLikeTransfer(desc)) {
+          rows.push(makeRow(p.desc, p.cat, p.date || lastDate || todayISO(), null, runAcct, bankMode));
+        } else {
+          desc = (p.desc + ' ' + desc).trim();
+        }
         cat = p.cat;
         queuedDate = p.date || todayISO();
         pending.length = 0;
@@ -1232,10 +1242,15 @@ tailwind.config = {
   }
   function isDuplicate(r) {
     const key = merchantKey(r.desc);
-    return transactions.some(t =>
-      Math.abs(Math.abs(t.amount) - r.amount) < 0.005 &&
-      closeEnough(merchantKey(t.desc), key) &&
-      daysApart(t.date, r.date) <= 7);
+    const moved = r.dir === 'xfer' || looksLikeTransfer(r.desc || '');
+    return transactions.some(t => {
+      if (Math.abs(Math.abs(t.amount) - r.amount) >= 0.005) return false;
+      if (daysApart(t.date, r.date) > 7) return false;
+      // Every issuer names the same payment differently — "Payment Thank You",
+      // "Mobile Payment", "Electronic Payment" — so match those on amount alone.
+      if (moved && (t.xfer || looksLikeTransfer(t.desc || ''))) return true;
+      return closeEnough(merchantKey(t.desc), key);
+    });
   }
 
   function renderReviewSummaryOnly() {
@@ -2859,7 +2874,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 43';
+  const BUILD = '2026-09-19 · 44';
 
   /* =============================================================
      KEEPING THE DATA
