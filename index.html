@@ -2420,11 +2420,21 @@ tailwind.config = {
     if (!acctDetail) return;
     const next = prompt('Rename "' + acctDetail + '" to:', acctDetail === 'Unassigned' ? '' : acctDetail);
     if (next === null) return;
-    const name = titleCaseAcct(next);
+    // Keep exactly what you typed — running it through the detection rules
+    // would turn "Amex Gold" straight back into "Amex".
+    const name = String(next).trim().replace(/\s+/g, ' ');
     if (!name || name === 'Unassigned') { toast('Give it a name'); return; }
+    if (name === acctDetail) return;
+    if (accounts[name] && accounts[acctDetail]) {
+      if (!confirm('"' + name + '" already exists. Merge this one into it?')) return;
+    }
     let n = 0;
     transactions.forEach(t => { if ((t.acct || 'Unassigned') === acctDetail) { t.acct = name; n++; } });
-    if (accounts[acctDetail] && !accounts[name]) { accounts[name] = accounts[acctDetail]; delete accounts[acctDetail]; }
+    if (accounts[acctDetail]) {
+      accounts[name] = Object.assign({}, accounts[name] || {}, accounts[acctDetail]);
+      delete accounts[acctDetail];
+    }
+    if (settings.primaryAcct === acctDetail) settings.primaryAcct = name;
     acctDetail = name;
     if (acctFilter !== 'All') acctFilter = name;
     save(); refreshCatOptions(); render(); renderAcctSheet();
@@ -2948,7 +2958,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 50';
+  const BUILD = '2026-09-19 · 51';
 
   /* =============================================================
      KEEPING THE DATA
