@@ -1514,8 +1514,10 @@ tailwind.config = {
     let inflow = 0, outflow = 0;
 
     transactions.forEach(t => {
-      // Anything logged after you typed the balance counts, whatever date it
-      // carries. Rows saved before that fall back to comparing dates.
+      /* A row moves the balance only if it is dated on or after the day you
+         typed it AND was entered afterwards. Back-dated history you paste
+         later was already baked into the figure you typed. */
+      if (t.date < asOf) return;
       const counts = (stamp && t.at) ? (t.at > stamp) : (t.date > asOf);
       if (!counts) return;
       const mine = (t.acct || 'Unassigned') === name;
@@ -1548,6 +1550,7 @@ tailwind.config = {
         const on = t.acct || 'Unassigned';
         if (on === name) return;
         if (acctIcon(on) === 'bank' || acctIcon(on) === 'vault') return;
+        if (t.date < asOf) return;
         const c = (stamp && t.at) ? (t.at > stamp) : (t.date > asOf);
         if (!c) return;
         const already = bankSide.some(b =>
@@ -2958,7 +2961,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 51';
+  const BUILD = '2026-09-19 · 52';
 
   /* =============================================================
      KEEPING THE DATA
