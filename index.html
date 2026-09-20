@@ -1491,8 +1491,28 @@ tailwind.config = {
     return 'card';
   }
 
+  /* Renamed cards keep the right family colour instead of a random one, and
+     the Amex blues sit well clear of Venture X's indigo. */
+  const ACCT_COLOR_RULES = [
+    [/\b(blue cash|amex blue|everyday|blue business)\b/i, '#2F93E0'],   // bright azure
+    [/\b(amex|american express|platinum|gold card)\b/i,   '#3FA9DE'],
+    [/\bventure\s*x\b/i,                                  '#4B6FB0'],   // indigo
+    [/\bventure\b/i,                                       '#5B83C0'],
+    [/\bsavor\b/i,                                         '#DD6A50'],
+    [/\bquicksilver\b/i,                                   '#98A4B2'],
+    [/\bcapital ?one\b/i,                                  '#E2614A'],
+    [/\bfrost\b/i,                                         '#3F7CB8'],
+    [/\b(discover)\b/i,                                    '#E09E3F'],
+    [/\b(chase|sapphire|freedom)\b/i,                      '#5684C0'],
+    [/\b(citi|costco)\b/i,                                 '#4197B3'],
+    [/\bapple\b/i,                                         '#7F98A6'],
+    [/\bsavings\b/i,                                       '#2FA383'],
+    [/\b(checking|bank|credit union|ssfcu)\b/i,            '#6285BC']
+  ];
+
   function acctColor(n) {
     if (ACCT_COLORS[n]) return ACCT_COLORS[n];
+    for (const [re, col] of ACCT_COLOR_RULES) if (re.test(n)) return col;
     let h = 0; String(n).split('').forEach(c => { h = (h * 31 + c.charCodeAt(0)) >>> 0; });
     return SPARE_COLORS[h % SPARE_COLORS.length];
   }
@@ -2961,7 +2981,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 52';
+  const BUILD = '2026-09-19 · 53';
 
   /* =============================================================
      KEEPING THE DATA
