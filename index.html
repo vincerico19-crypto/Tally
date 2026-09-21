@@ -1097,7 +1097,13 @@ tailwind.config = {
           const last = pending[pending.length - 1];
           // ...unless one of them is a payment and the other is a shop; those
           // are two separate rows that happen to sit next to each other.
-          const split = looksLikeTransfer(last.desc) !== looksLikeTransfer(leftover);
+          let split = looksLikeTransfer(last.desc) !== looksLikeTransfer(leftover);
+          // A name only wraps once it has filled the line. "SHELL OIL" is far
+          // too short to have wrapped, so what follows is the next merchant.
+          if (last.desc.length < 14) split = true;
+          // A plain two-word name tacked onto an already-full merchant line is
+          // the cardholder the app prints underneath, not part of the shop.
+          if (!split && last.desc.split(/\s+/).length >= 3 && /^[A-Za-z]{3,12}\s+[A-Za-z]{3,12}$/.test(leftover)) return;
           if (!split && (last.desc + ' ' + leftover).length <= 90) {
             last.desc = (last.desc + ' ' + leftover).trim();
             return;
@@ -2981,7 +2987,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-19 · 53';
+  const BUILD = '2026-09-20 · 54';
 
   /* =============================================================
      KEEPING THE DATA
