@@ -1114,6 +1114,8 @@ tailwind.config = {
           // ...unless one of them is a payment and the other is a shop; those
           // are two separate rows that happen to sit next to each other.
           let split = looksLikeTransfer(last.desc) && !looksLikeTransfer(leftover);
+          // The same shop twice in a row is two visits, never a wrapped name.
+          if (last.desc.toLowerCase() === leftover.toLowerCase()) split = true;
           // A name only wraps once it has filled the line. "SHELL OIL" is far
           // too short to have wrapped, so what follows is the next merchant.
           if (!interleaved && last.desc.length < 14) split = true;
@@ -3006,7 +3008,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-22 · 56';
+  const BUILD = '2026-09-22 · 57';
 
   /* =============================================================
      KEEPING THE DATA
