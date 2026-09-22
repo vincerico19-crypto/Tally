@@ -993,6 +993,13 @@ tailwind.config = {
       const cd = cleanDesc(d ? g.s.replace(d.match, ' ') : g.s);
       return { date: !!d && !a, amt: !!a, desc: !d && !a && !!cd && !asCategory(cd) };
     });
+    /* Two layouts share this parser. Most apps put each amount right after its
+       merchant, so consecutive text lines are one merchant's wrapped name plus
+       the cardholder. Some screens list every merchant first and every amount
+       after; there, consecutive text lines are separate merchants. */
+    const firstAmt = scan.findIndex(x => x.amt);
+    const interleaved = firstAmt >= 0 && scan.slice(firstAmt + 1).some(x => x.desc);
+
     let headerCut = -1;
     for (let i = 0; i < scan.length; i++) {
       if (scan[i].date) { headerCut = i; break; }
@@ -1100,7 +1107,7 @@ tailwind.config = {
           let split = looksLikeTransfer(last.desc) !== looksLikeTransfer(leftover);
           // A name only wraps once it has filled the line. "SHELL OIL" is far
           // too short to have wrapped, so what follows is the next merchant.
-          if (last.desc.length < 14) split = true;
+          if (!interleaved && last.desc.length < 14) split = true;
           // A plain two-word name tacked onto an already-full merchant line is
           // the cardholder the app prints underneath, not part of the shop.
           if (!split && last.desc.split(/\s+/).length >= 3 && /^[A-Za-z]{3,12}\s+[A-Za-z]{3,12}$/.test(leftover)) return;
@@ -2314,7 +2321,7 @@ tailwind.config = {
   /* =============================================================
      SHEETS, TOAST
   ============================================================= */
-  function openSheet(el) { el.dataset.open = 'true'; $('scrim').classList.remove('opacity-0', 'pointer-events-none'); document.body.style.overflow = 'hidden'; }
+  function openSheet(el) { if (el.id === 'pasteSheet' && typeof paintClear === 'function') setTimeout(paintClear, 0); el.dataset.open = 'true'; $('scrim').classList.remove('opacity-0', 'pointer-events-none'); document.body.style.overflow = 'hidden'; }
   function closeSheets() {
     $('pasteSheet').dataset.open = 'false'; $('dataSheet').dataset.open = 'false'; $('catSheet').dataset.open = 'false'; $('acctSheet').dataset.open = 'false'; $('editSheet').dataset.open = 'false';
     $('monthSheet').dataset.open = 'false';
@@ -2581,7 +2588,8 @@ tailwind.config = {
   function paintClear() {
     $('clearInput').classList.toggle('hidden', !$('bulkInput').value.trim());
   }
-  $('bulkInput').addEventListener('input', paintClear);
+  ['input', 'paste', 'change', 'keyup', 'focus'].forEach(ev =>
+    $('bulkInput').addEventListener(ev, () => setTimeout(paintClear, 0)));
   $('clearInput').onclick = function () {
     $('bulkInput').value = ''; paintClear();
     paintClear();
@@ -2603,6 +2611,7 @@ tailwind.config = {
         return;
       }
       box.value = box.value.trim() ? box.value.replace(/\s*$/, '\n') + text : text;
+      paintClear();
       msg.classList.add('hidden');
       $('processBtn').onclick();          // straight to the review screen
     }).catch(() => {
@@ -2639,7 +2648,7 @@ tailwind.config = {
     showStep(2);
   };
 
-  $('backBtn').onclick = () => showStep(1);
+  $('backBtn').onclick = () => { showStep(1); paintClear(); };
 
   $('addRowBtn').onclick = function () {
     draft.push({ id: uid(), date: todayISO(), desc: '', cat: 'Uncategorized', amount: 0, dir: 'out' });
@@ -2732,6 +2741,7 @@ tailwind.config = {
       `${m}/05  CPS ENERGY ONLINE PMT                $132.88\n` +
       `coffee 6.75\n` +
       `${m}/07  DIRECT DEP PAYROLL                  2,180.44`;
+    paintClear();
   };
 
   // Spell out exactly what counts as income this month, so nothing is doubled.
@@ -2987,7 +2997,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-20 · 54';
+  const BUILD = '2026-09-22 · 55';
 
   /* =============================================================
      KEEPING THE DATA
