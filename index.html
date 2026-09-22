@@ -624,7 +624,7 @@ tailwind.config = {
   function looksLikeTransfer(text) {
     if (/\bpayroll|direct dep|paycheck\b/i.test(text)) return false;   // that is real income
     // "Credit-Travel Reward", "Credit-Cash Back Reward", "Credit-Points Redemption"
-    if (/\bcredit\b/i.test(text) && /\breward|redemption|redeem|cash ?back|points|miles\b/i.test(text)) return true;
+    if (/\bcredit\b/i.test(text) && /\breward|redemption|redeem|cash ?back|points|miles|streaming|statement|benefit|offer|monthly|annual|subscription\b/i.test(text)) return true;
     return XFER_HINTS.test(text);
   }
 
@@ -799,7 +799,7 @@ tailwind.config = {
     [/\b(cvs|walgreens|pharmacy|doctor|dental|dentist|clinic|hospital|medical|urgent care|optometr|vision|copay)\b/i, 'Health'],
     [/\b(amazon|target|best buy|home depot|lowe'?s|ikea|ross|marshalls|tj ?maxx|old navy|nike|shein|etsy|ebay)\b/i, 'Shopping'],
     [/\bcredit[- ]\w*\s*(back\s*)?(reward|redemption)s?\b/i, 'Transfer'],
-    [/\b(cash ?back reward|statement credit|rewards? credit|rewards? redemption|electronic payment|online payment|card payment)\b/i, 'Transfer'],
+    [/\b(cash ?back reward|statement credit|rewards? credit|rewards? redemption|streaming credit|monthly credit|benefit credit|electronic payment|online payment|card payment)\b/i, 'Transfer'],
     [/\b(zelle|venmo|cash ?app|apple cash|square cash|remitly|western union|moneygram|wise transfer|sendwave|paypal)\b/i, 'P2P Transfers'],
     [/\b(insurance|geico|progressive|state farm|allstate|usaa|premium)\b/i, 'Insurance'],
     [/\b(church|tithe|offering|donation|charity|gofundme|red cross|lutheran|baptist|methodist|catholic|presbyterian|parish|chapel|ministr|diocese|synod)\b/i, 'Giving'],
@@ -1044,7 +1044,16 @@ tailwind.config = {
 
       const dateHit = findDate(s);
       let rest = dateHit ? s.replace(dateHit.match, ' ') : s;
-      const amtHit = findAmount(rest);
+      let amtHit = findAmount(rest);
+
+      /* "$120 Disney" / "Streaming Credit" / "-$10.00" — the first line is the
+         name of an offer, not the charge. A round figure at the very start of a
+         line whose text continues on the next line is part of the name. */
+      if (amtHit && amtHit.start <= 1 && !/\./.test(amtHit.raw)) {
+        const after = rest.slice(amtHit.end).trim();
+        const next = scan[lineIdx + 1];
+        if (after && next && next.desc && !next.amt) amtHit = null;
+      }
 
       if (!amtHit) {
         if (dateHit) { lastDate = dateHit.iso; lastWasDesc = false; }
@@ -1104,7 +1113,7 @@ tailwind.config = {
           const last = pending[pending.length - 1];
           // ...unless one of them is a payment and the other is a shop; those
           // are two separate rows that happen to sit next to each other.
-          let split = looksLikeTransfer(last.desc) !== looksLikeTransfer(leftover);
+          let split = looksLikeTransfer(last.desc) && !looksLikeTransfer(leftover);
           // A name only wraps once it has filled the line. "SHELL OIL" is far
           // too short to have wrapped, so what follows is the next merchant.
           if (!interleaved && last.desc.length < 14) split = true;
@@ -2997,7 +3006,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-22 · 55';
+  const BUILD = '2026-09-22 · 56';
 
   /* =============================================================
      KEEPING THE DATA
