@@ -861,7 +861,7 @@ tailwind.config = {
       id: uid(),
       date: dateISO,
       desc: d,
-      acct: o.acct || guessAccount(String(desc)),
+      acct: resolveAcct(o.acct || guessAccount(String(desc))),
       xfer: o.xfer != null ? !!o.xfer : looksLikeTransfer(String(desc)),
       cat: o.cat || guessCategory(desc, isIn),
       amount: Math.abs(amount),
@@ -2295,12 +2295,31 @@ tailwind.config = {
       '<option value="__new">New card or account\u2026</option>';
   }
 
+  /* Your own cards and accounts only. The starter list appears just once, when
+     there is nothing saved yet, so renamed cards never sit beside the generic
+     name they came from. */
   function knownAccounts() {
-    const set = new Set(['Capital One Savor', 'Capital One Venture X', 'Capital One Quicksilver', 'Capital One', 'Amex', 'Discover', 'Chase', 'Frost', 'Checking', 'Savings', 'Cash']);
-    transactions.forEach(t => { if (t.acct) set.add(t.acct); });
+    const set = new Set();
+    Object.keys(accounts).forEach(a => set.add(a));
+    transactions.forEach(t => { if (t.acct && t.acct !== 'Unassigned') set.add(t.acct); });
     if (settings.primaryAcct) set.add(settings.primaryAcct);
+    if (!set.size) ['Capital One Savor', 'Capital One Venture X', 'Capital One', 'Amex', 'Discover', 'Chase', 'Frost', 'Checking', 'Savings', 'Cash'].forEach(a => set.add(a));
     set.add('Unassigned');
     return set;
+  }
+
+  /* A statement says "Amex" but your card is called "Amex Blue Cash Preferred".
+     Match what the app detects onto the name you already use. */
+  function resolveAcct(name) {
+    if (!name || name === 'Unassigned') return name;
+    const mine = knownAccounts();
+    if (mine.has(name)) return name;
+    const want = name.toLowerCase();
+    for (const a of mine) {
+      const low = a.toLowerCase();
+      if (low === want || low.startsWith(want + ' ') || low.endsWith(' ' + want)) return a;
+    }
+    return name;
   }
 
   function exitSelect() { selectMode = false; selected.clear(); renderAcctSheet(); }
@@ -2726,7 +2745,7 @@ tailwind.config = {
           if (t.cat === 'Uncategorized' && stem && merchantStem(t.desc) === stem) { t.cat = cat; backfilled++; }
         });
       }
-      let acct = titleCaseAcct(r.acct);
+      let acct = resolveAcct(titleCaseAcct(r.acct));
       if (acct === 'Unassigned' && settings.primaryAcct) acct = settings.primaryAcct;
       return { id: r.id, at: Date.now(), date: r.date, desc: (r.desc || '').trim() || 'Untitled', cat: cat, acct: acct, xfer: r.dir === 'xfer', amount: r.dir === 'in' ? -r.amount : r.amount };
     });
@@ -3008,7 +3027,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-22 · 57';
+  const BUILD = '2026-09-22 · 58';
 
   /* =============================================================
      KEEPING THE DATA
