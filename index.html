@@ -1886,13 +1886,14 @@ tailwind.config = {
     while (next < floor) next = new Date(next.getFullYear(), next.getMonth() + 1, d);
     return next;
   }
-  /* The due date this cycle's payment is measured from: one month before the
-     next one. Any payment to the card after it pays this cycle. */
-  function prevDue(info) {
+  /* A statement closes at least 21 days before its due date (the legal
+     minimum). Only a payment made after that can be paying this bill;
+     anything earlier paid the statement before it. */
+  const STATEMENT_GAP_DAYS = 21;
+  function cycleStart(info) {
     const next = nextDue(info);
     if (!next) return null;
-    const d = Number(dueValue(info).slice(8, 10));
-    return new Date(next.getFullYear(), next.getMonth() - 1, d);
+    return new Date(next.getFullYear(), next.getMonth(), next.getDate() - STATEMENT_GAP_DAYS);
   }
   // Credits the issuer posted (rewards, streaming credits) are not payments you made.
   function isIssuerCredit(desc) {
@@ -1903,12 +1904,12 @@ tailwind.config = {
   // The payment that covers the coming due date, if one is logged.
   function duePaidBy(name) {
     const info = accounts[name] || {};
-    const prev = prevDue(info);
-    if (!prev) return null;
-    const since = iso(prev.getFullYear(), prev.getMonth() + 1, prev.getDate());
+    const start = cycleStart(info);
+    if (!start) return null;
+    const since = iso(start.getFullYear(), start.getMonth() + 1, start.getDate());
     const today = todayISO();
     const hits = transactions.filter(t =>
-      t.xfer && t.date > since && t.date <= today && !isIssuerCredit(t.desc) &&
+      t.xfer && t.date >= since && t.date <= today && !isIssuerCredit(t.desc) &&
       ((t.acct || 'Unassigned') === name || guessAccount(t.desc) === name));
     if (!hits.length) return null;
     hits.sort((a, b) => b.date.localeCompare(a.date));
@@ -3066,7 +3067,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-24 · 59';
+  const BUILD = '2026-09-24 · 60';
 
   /* =============================================================
      KEEPING THE DATA
