@@ -1839,7 +1839,7 @@ tailwind.config = {
   function dueStrip(n) {
     const info = accounts[n] || {};
     const dt = nextDue(info);
-    if (!dt) return '';
+    if (!dt || duePaidBy(n)) return '';           // paid this cycle: nothing due
     const col = dueColor(dt);
     const soon = daysUntilDue(dt) <= 10;
     return `<p class="mt-1.5 pl-[42px]">
@@ -1886,6 +1886,39 @@ tailwind.config = {
     while (next < floor) next = new Date(next.getFullYear(), next.getMonth() + 1, d);
     return next;
   }
+  /* The due date this cycle's payment is measured from: one month before the
+     next one. Any payment to the card after it pays this cycle. */
+  function prevDue(info) {
+    const next = nextDue(info);
+    if (!next) return null;
+    const d = Number(dueValue(info).slice(8, 10));
+    return new Date(next.getFullYear(), next.getMonth() - 1, d);
+  }
+  // Credits the issuer posted (rewards, streaming credits) are not payments you made.
+  function isIssuerCredit(desc) {
+    const s = desc || '';
+    if (/\b(reward|cash ?back|statement credit|redemption|redeem|refund|credit balance)\b/i.test(s)) return true;
+    return /\bcredit\b/i.test(s) && /\b(streaming|benefit|offer|points|miles|monthly|annual|subscription)\b/i.test(s);
+  }
+  // The payment that covers the coming due date, if one is logged.
+  function duePaidBy(name) {
+    const info = accounts[name] || {};
+    const prev = prevDue(info);
+    if (!prev) return null;
+    const since = iso(prev.getFullYear(), prev.getMonth() + 1, prev.getDate());
+    const today = todayISO();
+    const hits = transactions.filter(t =>
+      t.xfer && t.date > since && t.date <= today && !isIssuerCredit(t.desc) &&
+      ((t.acct || 'Unassigned') === name || guessAccount(t.desc) === name));
+    if (!hits.length) return null;
+    hits.sort((a, b) => b.date.localeCompare(a.date));
+    return { date: hits[0].date, total: hits.reduce((s, t) => s + Math.abs(t.amount), 0) };
+  }
+  function paidLabel(p) {
+    const [y, m, d] = p.date.split('-').map(Number);
+    return 'paid ' + money(p.total).replace('.00', '') + ' · ' + new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
   function daysUntilDue(dt) {
     const today = new Date();
     const floor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -2973,7 +3006,13 @@ tailwind.config = {
       const next = isNaN(v) ? 0 : Math.abs(v);
       const dateEl = $('balancesList').querySelector('[data-asof="' + name.replace(/"/g, '\\"') + '"]');
       const chosen = (dateEl && dateEl.value) ? dateEl.value : todayISO();
-      if (next !== Number(info.balance || 0) || chosen !== info.asOf) n++;
+      /* Only an account whose balance or as-of date you actually changed gets
+         re-anchored. Saving a due date or a limit must never touch the others:
+         re-stamping them used to drop payments logged on the as-of day, or
+         earlier today, out of the balance. */
+      const changed = Math.abs(next - (Number(info.balance) || 0)) >= 0.005 || chosen !== (info.asOf || todayISO());
+      if (!changed) return;
+      n++;
       info.balance = next;
       info.asOf = chosen;
       // Dated today: count anything logged from now on. Dated earlier: count
@@ -2999,7 +3038,7 @@ tailwind.config = {
       accounts[name].limit = isNaN(v) ? 0 : Math.abs(v);
     });
     save(); render(); renderAcctSheet();
-    showMsg($('dataMsg'), n ? 'Balances updated. Anything you paste from today moves them from here.' : 'Limits saved.', 'good');
+    showMsg($('dataMsg'), n ? n + ' balance' + (n === 1 ? '' : 's') + ' updated. The rest were left exactly as they were.' : 'Saved. No balances were changed.', 'good');
     $('dataMsg').classList.remove('hidden');
     toast('Balances saved');
   };
@@ -3027,7 +3066,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-22 · 58';
+  const BUILD = '2026-09-24 · 59';
 
   /* =============================================================
      KEEPING THE DATA
@@ -3100,7 +3139,12 @@ tailwind.config = {
         ${isBank ? '' : `<div class="flex items-center gap-2 mt-2">
           <span class="text-[12px] text-muted shrink-0">due</span>
           <input class="cell num text-[13px]" type="date" value="${esc(dueValue(info))}" data-due="${esc(n)}" aria-label="${esc(n)} payment due date">
-          <span class="text-[12px] shrink-0" style="color:${dueValue(info) ? dueColor(nextDue(info)) : '#93A1AE'}">${dueValue(info) ? esc(dueLabel(nextDue(info))) : 'not set'}</span>
+          ${(() => {
+            if (!dueValue(info)) return '<span class="text-[12px] shrink-0" style="color:#93A1AE" data-duehint>not set</span>';
+            const p = duePaidBy(n);
+            if (p) return `<span class="num text-[12px] shrink-0" style="color:#4F93D6" data-duehint>${esc(paidLabel(p))}</span>`;
+            return `<span class="text-[12px] shrink-0" style="color:${dueColor(nextDue(info))}" data-duehint>${esc(dueLabel(nextDue(info)))}</span>`;
+          })()}
         </div>`}
         <div class="flex items-center gap-2 mt-2">
           <span class="text-[12px] text-muted shrink-0">as of</span>
@@ -3109,6 +3153,16 @@ tailwind.config = {
         </div>
       </div>`;
     }).join('');
+
+    // A date picked but not saved yet says so, instead of "not set".
+    $('balancesList').querySelectorAll('[data-due]').forEach(el => {
+      el.addEventListener('change', () => {
+        const hint = el.parentNode.querySelector('[data-duehint]');
+        if (!hint) return;
+        hint.textContent = el.value ? 'tap Save to keep' : 'not set';
+        hint.style.color = '#D79A2B';
+      });
+    });
   }
 
   // Paying a card is one movement with two ends. Logging it here writes the
