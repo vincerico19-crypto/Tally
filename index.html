@@ -74,8 +74,76 @@ tailwind.config = {
   </div>
 </header>
 
-<main class="px-4 pb-40 pt-4 max-w-xl mx-auto">
+<main class="px-4 pb-32 pt-4 max-w-xl mx-auto">
+<div id="panel-home">
+  <section id="homeHero" class="px-1 pt-1 pb-1">
+    <p class="text-[13px] font-semibold text-muted">Truly yours</p>
+    <p id="heroNet" class="num text-[42px] leading-tight font-bold tracking-tight">—</p>
+    <p id="heroSub" class="num text-[13px] text-muted"></p>
+    <div id="heroBar" class="hidden mt-3.5 h-3.5 rounded-full overflow-hidden flex gap-[3px]"></div>
+    <div id="heroBarLbl" class="hidden mt-1.5 justify-between text-[12px] text-muted num"></div>
+  </section>
+<section class="mt-4">
+    <h2 class="text-[15px] font-bold tracking-tight px-1 mb-2 flex items-center gap-1.5"><span id="acctHeadIcon"></span>By card and account</h2>
+    <div id="acctList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
+  </section>
+  <section class="mt-3 grid grid-cols-2 gap-2.5">
+    <div class="bg-card rounded-2xl border border-line px-3.5 py-3"><p class="text-[12px] text-muted">In this month</p><p id="homeIn" class="num text-[19px] font-bold mt-0.5" style="color:#35C08A">$0.00</p></div>
+    <div class="bg-card rounded-2xl border border-line px-3.5 py-3"><p class="text-[12px] text-muted">Spent this month</p><p id="homeSpent" class="num text-[19px] font-bold mt-0.5" style="color:#E9EEF3">$0.00</p></div>
+  </section>
+  <section class="mt-4 bg-card rounded-2xl border border-line p-5">
+    <div class="flex items-end justify-between gap-4">
+      <div>
+        <p class="text-[14px] text-muted flex items-center gap-1.5"><span id="leftIcon"></span>Left after everything</p>
+        <p id="leftBig" class="num text-[30px] leading-none font-semibold tracking-tight mt-1.5">$0.00</p>
+      </div>
+      <button id="editIncome" class="text-right active:opacity-60">
+        <p class="text-[14px] text-muted">Monthly income</p>
+        <p id="incomeBig" class="num text-[20px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">Set</p>
+      </button>
+    </div>
+    <div class="mt-4 pt-4 border-t border-line space-y-2.5 text-[15px]">
+      <div class="flex justify-between"><span class="text-muted">Income you expect</span><span id="rowIncome" class="num font-semibold">$0.00</span></div>
+      <div id="rowDepositWrap" class="hidden justify-between"><span class="text-muted">Deposits you pasted</span><span id="rowDeposit" class="num font-semibold text-income">$0.00</span></div>
+      <div class="flex justify-between"><span class="text-muted">Spent</span><span id="rowSpent" class="num font-semibold">$0.00</span></div>
+      <div id="rowMovedWrap" class="hidden justify-between"><span class="text-muted">Card payments &amp; transfers</span><span id="rowMoved" class="num font-semibold text-muted">$0.00</span></div>
+      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="font-medium">In the bank</span><span id="rowBank" class="num font-semibold">$0.00</span></div>
+      <div id="rowOwedWrap" class="hidden justify-between"><span class="text-muted">Owed on cards</span><span id="rowOwed" class="num font-semibold text-over">$0.00</span></div>
+      <div id="rowNetWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span class="text-[16px] font-semibold">Truly yours</span><span id="rowNet" class="num text-[17px] font-semibold">$0.00</span></div>
+    </div>
+  </section>
+</div>
 
+<div id="panel-activity" class="hidden">
+  <section>
+    <label class="flex items-center gap-2.5 h-12 rounded-2xl bg-card border border-line px-3.5 text-muted">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="txSearch" type="search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search merchant, category, amount" aria-label="Search transactions" class="flex-1 bg-transparent text-ink outline-none placeholder:text-muted">
+    </label>
+  </section>
+  <section class="mt-3 grid grid-cols-3 gap-2.5">
+    <div class="bg-card rounded-2xl border border-line px-3.5 py-3"><p class="text-[12px] text-muted">Spent</p><p id="actSpent" class="num text-[19px] font-bold mt-0.5" style="color:#E9EEF3">$0.00</p></div>
+    <div class="bg-card rounded-2xl border border-line px-3.5 py-3"><p class="text-[12px] text-muted">In</p><p id="actIn" class="num text-[19px] font-bold mt-0.5" style="color:#35C08A">$0.00</p></div>
+    <div class="bg-card rounded-2xl border border-line px-3.5 py-3"><p class="text-[12px] text-muted">Paid to cards</p><p id="actPaid" class="num text-[19px] font-bold mt-0.5" style="color:#4F93D6">$0.00</p></div>
+  </section>
+  <section class="mt-4">
+    <div id="acctChips" class="flex gap-1.5 overflow-x-auto hide-scroll pb-2 -mx-1 px-1"></div>
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 id="txHeading" class="text-[15px] font-bold tracking-tight">Transactions</h2>
+      <button id="toggleSort" class="text-[13px] text-muted active:opacity-60">Newest first</button>
+    </div>
+    <div id="txList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
+  </section>
+  <section id="recurringSection" class="hidden mt-4">
+    <div class="flex items-baseline justify-between px-1 mb-2">
+      <h2 class="text-[15px] font-bold tracking-tight flex items-center gap-1.5"><span id="recHeadIcon"></span>Repeats every month</h2>
+      <span id="recTotal" class="num text-[13px] text-muted"></span>
+    </div>
+    <div id="recurringList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
+  </section>
+</div>
+
+<div id="panel-spending" class="hidden">
   <section class="mb-4">
     <div class="flex items-baseline justify-between px-1 mb-2">
       <h2 class="text-[15px] font-bold tracking-tight">Last six months</h2>
@@ -83,7 +151,6 @@ tailwind.config = {
     </div>
     <div id="trendStrip" class="bg-card rounded-2xl border border-line px-3 py-3"></div>
   </section>
-
   <section class="bg-card rounded-2xl border border-line p-5">
     <div class="flex items-end justify-between gap-4">
       <div>
@@ -108,71 +175,65 @@ tailwind.config = {
       <span id="incomeAmt" class="num text-[16px] font-semibold text-income">$0.00</span>
     </div>
   </section>
-
-  <section class="mt-4 bg-card rounded-2xl border border-line p-5">
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-[14px] text-muted flex items-center gap-1.5"><span id="leftIcon"></span>Left after everything</p>
-        <p id="leftBig" class="num text-[30px] leading-none font-semibold tracking-tight mt-1.5">$0.00</p>
-      </div>
-      <button id="editIncome" class="text-right active:opacity-60">
-        <p class="text-[14px] text-muted">Monthly income</p>
-        <p id="incomeBig" class="num text-[20px] font-semibold leading-tight mt-1.5 underline decoration-line decoration-2 underline-offset-4">Set</p>
-      </button>
-    </div>
-    <div class="mt-4 pt-4 border-t border-line space-y-2.5 text-[15px]">
-      <div class="flex justify-between"><span class="text-muted">Income you expect</span><span id="rowIncome" class="num font-semibold">$0.00</span></div>
-      <div id="rowDepositWrap" class="hidden justify-between"><span class="text-muted">Deposits you pasted</span><span id="rowDeposit" class="num font-semibold text-income">$0.00</span></div>
-      <div class="flex justify-between"><span class="text-muted">Spent</span><span id="rowSpent" class="num font-semibold">$0.00</span></div>
-      <div id="rowMovedWrap" class="hidden justify-between"><span class="text-muted">Card payments &amp; transfers</span><span id="rowMoved" class="num font-semibold text-muted">$0.00</span></div>
-      <div id="rowBankWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span id="rowBankLabel" class="font-medium">In the bank</span><span id="rowBank" class="num font-semibold">$0.00</span></div>
-      <div id="rowOwedWrap" class="hidden justify-between"><span class="text-muted">Owed on cards</span><span id="rowOwed" class="num font-semibold text-over">$0.00</span></div>
-      <div id="rowNetWrap" class="hidden justify-between pt-3 mt-1.5 border-t border-line"><span class="text-[16px] font-semibold">Truly yours</span><span id="rowNet" class="num text-[17px] font-semibold">$0.00</span></div>
-    </div>
-  </section>
-
   <section class="mt-4">
     <h2 class="text-[15px] font-bold tracking-tight px-1 mb-2 flex items-center gap-1.5"><span id="catHeadIcon"></span>Where it went</h2>
     <div id="catList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
   </section>
+</div>
 
-  <section id="recurringSection" class="hidden mt-4">
-    <div class="flex items-baseline justify-between px-1 mb-2">
-      <h2 class="text-[15px] font-bold tracking-tight flex items-center gap-1.5"><span id="recHeadIcon"></span>Repeats every month</h2>
-      <span id="recTotal" class="num text-[13px] text-muted"></span>
+<div id="panel-cards" class="hidden">
+  <h2 class="px-1 text-[20px] font-bold tracking-tight">Cards &amp; accounts</h2>
+  <section class="mt-3 bg-card rounded-2xl border border-line p-4">
+    <p class="text-[16px] font-bold tracking-tight mb-1">Pay a card</p>
+    <p class="text-[13px] text-muted leading-relaxed mb-3">Paying a card down? Log it here and both sides move at once — the card drops, the account it came from drops, and your spending total is untouched.</p>
+    <div class="space-y-2">
+      <div class="flex gap-2">
+        <select id="payCard" class="cell text-[15px] flex-1" aria-label="Card being paid"></select>
+        <input id="payAmount" type="number" inputmode="decimal" step="0.01" min="0" class="cell num text-[15px] w-28 shrink-0 text-right" placeholder="Amount" aria-label="Payment amount">
+      </div>
+      <div class="flex gap-2">
+        <select id="payFrom" class="cell text-[15px] flex-1" aria-label="Paid from"></select>
+        <button id="recordPay" class="h-[42px] px-4 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80 shrink-0">Record</button>
+      </div>
     </div>
-    <div id="recurringList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
   </section>
-
-  <section class="mt-4">
-    <h2 class="text-[15px] font-bold tracking-tight px-1 mb-2 flex items-center gap-1.5"><span id="acctHeadIcon"></span>By card and account</h2>
-    <div id="acctList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
+  <section class="mt-3 bg-card rounded-2xl border border-line p-4">
+    <p class="text-[16px] font-bold tracking-tight mb-1">Balances, limits &amp; due dates</p>
+    <p class="text-[13px] text-muted leading-relaxed mb-3">Enter what the account said on a given day. Everything you have logged since that day is added or subtracted automatically — so setting the date back to the start of the month lets your transactions do the maths.</p>
+    <div id="balancesList" class="space-y-2.5"></div>
+    <button id="saveBalances" class="mt-3 w-full h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Save balances</button>
   </section>
-
-  <section class="mt-5">
-    <div id="acctChips" class="flex gap-1.5 overflow-x-auto hide-scroll pb-2 -mx-1 px-1"></div>
-    <div class="flex items-center justify-between px-1 mb-2">
-      <h2 id="txHeading" class="text-[15px] font-bold tracking-tight">Transactions</h2>
-      <button id="toggleSort" class="text-[13px] text-muted active:opacity-60">Newest first</button>
+  <section class="mt-3 bg-card rounded-2xl border border-line p-4">
+    <p class="text-[16px] font-bold tracking-tight mb-1">Backup</p>
+    <p class="text-[13px] text-muted mb-2.5">Build <span class="num" id="buildStamp"></span></p>
+    <div class="grid grid-cols-2 gap-2">
+      <button id="exportBtn" class="h-12 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Download backup</button>
+      <button id="importBtn" class="h-12 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Restore backup</button>
     </div>
-    <div id="txList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
+    <button id="copyBtn" class="mt-2 w-full h-12 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Copy backup to clipboard</button>
+    <p id="storageState" class="mt-3 text-[13px] text-muted leading-relaxed"></p>
+    <input id="importFile" type="file" accept=".json,application/json" class="hidden">
+    <p id="dataMsg" class="hidden mt-3 rounded-xl px-3 py-2.5 text-[13px] leading-relaxed"></p>
+    <p class="mt-3 text-[13px] text-muted leading-relaxed">Everything lives in this browser only. Save a backup before clearing browser data or switching phones — restoring replaces what is stored now. On a phone this opens the share sheet, so you can pick a folder, drop it in iCloud Drive, or send it to yourself.</p>
   </section>
-
+  <button id="openData" class="mt-3 w-full h-12 rounded-2xl bg-card border border-line text-[15px] font-medium active:bg-line flex items-center justify-between px-4">Budget, income &amp; settings<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93A1AE" stroke-width="2.2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></button>
+</div>
 </main>
 
-<div class="fixed bottom-0 inset-x-0 z-20 bg-page/95 backdrop-blur border-t border-line px-4 pt-3 safe-b">
-  <div class="max-w-xl mx-auto flex gap-2">
-    <button id="openPaste" class="flex-1 h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Paste anything</button>
-    <button id="openData" aria-label="Backup and settings" class="w-12 h-12 grid place-items-center rounded-xl bg-card border border-line active:bg-line">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5h.01M12 12h.01M12 19h.01"/></svg>
-    </button>
+<nav class="fixed bottom-0 inset-x-0 z-20 bg-[#131A21]/95 backdrop-blur border-t border-line pt-1.5 safe-b" aria-label="Tabs">
+  <div class="max-w-xl mx-auto flex items-start">
+    <button id="tab-home" data-tab="home" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="text-[10px] font-semibold">Home</span></button>
+    <button id="tab-activity" data-tab="activity" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="text-[10px] font-semibold">Activity</span></button>
+    <div class="flex-1 flex justify-center"><button id="openPaste" aria-label="Add transactions" class="w-[52px] h-[52px] -mt-4 rounded-full bg-accent text-white grid place-items-center shadow-lg active:opacity-80"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <button id="tab-cards" data-tab="cards" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="text-[10px] font-semibold">Cards</span></button>
+    <button id="tab-spending" data-tab="spending" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg><span class="text-[10px] font-semibold">Spending</span></button>
   </div>
-</div>
+</nav>
 
 <div id="scrim" class="scrim fixed inset-0 z-30 bg-black/65 opacity-0 pointer-events-none"></div>
 
 <!-- ============ BACKUP NUDGE ============ -->
-<div id="backupNag" class="hidden fixed left-3 right-3 bottom-[92px] z-20 rounded-xl bg-chip text-white px-4 py-3 flex items-center gap-3 shadow-lg">
+<div id="backupNag" style="bottom:calc(76px + env(safe-area-inset-bottom))" class="hidden fixed left-3 right-3 z-20 rounded-xl bg-chip text-white px-4 py-3 flex items-center gap-3 shadow-lg">
   <p id="backupNagText" class="text-[13px] leading-snug flex-1"></p>
   <button id="backupNagBtn" class="shrink-0 h-9 px-3 rounded-lg bg-white/15 text-[13px] font-semibold active:bg-white/25">Back up</button>
   <button id="backupNagX" aria-label="Dismiss" class="shrink-0 w-7 h-7 grid place-items-center rounded-full text-white/60 active:text-white">
@@ -212,6 +273,7 @@ tailwind.config = {
       <button id="processBtn" class="flex-1 h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Read it</button>
       <button id="demoBtn" class="h-12 px-4 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Sample</button>
     </div>
+    <button id="logOneBtn" class="mt-2 w-full h-11 rounded-xl border border-line text-[14px] font-medium text-muted active:bg-line">Log a single transaction</button>
     <p class="mt-4 text-[13px] text-muted leading-relaxed">
       No format needed. A line just needs a number somewhere in it. A missing date falls back to the date above it, then to today. Running balances, tax lines, and reference numbers get ignored. Refunds, deposits, and payouts are read as money in.
     </p>
@@ -317,7 +379,7 @@ tailwind.config = {
   <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
 
   <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center justify-between">
-    <h3 class="text-[16px] font-semibold">Backup &amp; settings</h3>
+    <h3 class="text-[16px] font-semibold">Budget &amp; settings</h3>
   </div>
   <div class="px-5 py-4 overflow-y-auto hide-scroll">
     <label class="block text-[15px] font-bold tracking-tight mb-1.5" for="budgetInput">Budget for <span id="budgetMonthName">this month</span></label>
@@ -348,44 +410,11 @@ tailwind.config = {
       <input id="countDeposits" type="checkbox" class="w-4 h-4 mt-0.5 accent-[#35C08A]">
       <span>Add pasted deposits on top of this. Turn it off if your paycheck is already counted above.</span>
     </label>
+    <p id="setMsg" class="hidden mt-3 rounded-xl px-3 py-2.5 text-[13px] leading-relaxed"></p>
 
     <div class="h-px bg-line my-5"></div>
 
-    <p class="text-[15px] font-bold tracking-tight mb-1.5">Card &amp; account balances</p>
-    <p class="text-[13px] text-muted leading-relaxed mb-3">Enter what the account said on a given day. Everything you have logged since that day is added or subtracted automatically — so setting the date back to the start of the month lets your transactions do the maths.</p>
-    <div id="balancesList" class="space-y-2.5"></div>
-    <button id="saveBalances" class="mt-3 w-full h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80">Save balances</button>
-
-    <p class="text-[15px] font-bold tracking-tight mt-5 mb-1.5">Record a payment</p>
-    <p class="text-[13px] text-muted leading-relaxed mb-3">Paying a card down? Log it here and both sides move at once — the card drops, the account it came from drops, and your spending total is untouched.</p>
-    <div class="space-y-2">
-      <div class="flex gap-2">
-        <select id="payCard" class="cell text-[15px] flex-1" aria-label="Card being paid"></select>
-        <input id="payAmount" type="number" inputmode="decimal" step="0.01" min="0" class="cell num text-[15px] w-28 shrink-0 text-right" placeholder="Amount" aria-label="Payment amount">
-      </div>
-      <div class="flex gap-2">
-        <select id="payFrom" class="cell text-[15px] flex-1" aria-label="Paid from"></select>
-        <button id="recordPay" class="h-[42px] px-4 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80 shrink-0">Record</button>
-      </div>
-    </div>
-
-    <div class="h-px bg-line my-5"></div>
-
-    <p class="text-[15px] font-bold tracking-tight mb-2">Your data</p>
-    <p class="text-[13px] text-muted mb-2.5">Build <span class="num" id="buildStamp"></span></p>
-    <div class="grid grid-cols-2 gap-2">
-      <button id="exportBtn" class="h-12 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Download backup</button>
-      <button id="importBtn" class="h-12 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Restore backup</button>
-    </div>
-    <button id="copyBtn" class="mt-2 w-full h-12 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Copy backup to clipboard</button>
-    <p id="storageState" class="mt-3 text-[13px] text-muted leading-relaxed"></p>
-    <input id="importFile" type="file" accept=".json,application/json" class="hidden">
-    <p id="dataMsg" class="hidden mt-3 rounded-xl px-3 py-2.5 text-[13px] leading-relaxed"></p>
-    <p class="mt-3 text-[13px] text-muted leading-relaxed">Everything lives in this browser only. Save a backup before clearing browser data or switching phones — restoring replaces what is stored now. On a phone this opens the share sheet, so you can pick a folder, drop it in iCloud Drive, or send it to yourself.</p>
-
-    <div class="h-px bg-line my-5"></div>
-
-    <p class="text-[15px] font-bold tracking-tight mb-2">Learned categories</p>
+<p class="text-[15px] font-bold tracking-tight mb-2">Learned categories</p>
     <p id="learnedCount" class="text-[13px] text-muted leading-relaxed">Tally remembers the category you pick for a merchant and reuses it next time.</p>
     <div id="learnedList" class="mt-2 rounded-xl border border-line divide-y divide-line overflow-hidden max-h-64 overflow-y-auto hide-scroll"></div>
     <button id="forgetCats" class="mt-2 h-11 px-4 rounded-xl bg-page border border-line text-[14px] font-medium active:bg-line">Forget them all</button>
@@ -427,6 +456,7 @@ tailwind.config = {
   let catBudgets = {};             // per category: a monthly limit
   let viewMonth = monthKey(new Date());
   let sortDesc = true;
+  let searchQ = '';                // Activity search box
   let draft = [];                  // rows waiting in the review step
   let draftNotes = [];             // anything the parser wants to warn about
   let draftDupes = [];             // rows that look like ones already saved
@@ -1452,13 +1482,19 @@ tailwind.config = {
       nw.classList.add('hidden'); nw.classList.remove('flex');
     }
 
+    renderHero(cash, owed, bankNames.length, cardNames.length);
+    $('homeIn').textContent = money(income);
+    $('homeSpent').textContent = money(spent);
+    $('actSpent').textContent = money(spent);
+    $('actIn').textContent = money(income);
+    $('actPaid').textContent = money(moved);
+
     const left = moneyIn - spent;
     const lb = $('leftBig');
     lb.textContent = (setIncome || income) ? money(left) : '—';
     lb.classList.toggle('text-over', (setIncome || income) && left < 0);
 
     renderTrend();
-    $('txHeading').textContent = monthShort(viewMonth).split(' ')[0] + ' transactions';
     $('catHeadIcon').innerHTML = iconSvg('tag', '#E9EEF3', 15);
     $('acctHeadIcon').innerHTML = iconSvg('card', '#E9EEF3', 15);
     // How the month is tracking, while there is still time to act on it
@@ -1489,6 +1525,31 @@ tailwind.config = {
     renderBalances();
     renderPayPickers();
     renderNag();
+  }
+
+  /* Home: what is truly yours, cash against what the cards are carrying. */
+  function renderHero(cash, owed, nBanks, nCards) {
+    const netEl = $('heroNet'), sub = $('heroSub'), bar = $('heroBar'), lbl = $('heroBarLbl');
+    if (!nBanks && !nCards) {
+      netEl.textContent = '—'; netEl.style.color = '';
+      sub.textContent = 'Add your balances in the Cards tab to see where you stand.';
+      bar.classList.add('hidden'); lbl.classList.add('hidden'); lbl.classList.remove('flex');
+      return;
+    }
+    const net = cash - owed;
+    netEl.textContent = (net < 0 ? '\u2212' : '') + money(Math.abs(net));
+    netEl.style.color = net < 0 ? '#F08A72' : '#35C08A';
+    sub.textContent = money(cash) + ' cash minus ' + money(owed) + ' on cards';
+    const total = cash + owed;
+    if (total > 0) {
+      const cp = cash / total * 100;
+      bar.innerHTML = (cash > 0 ? `<div style="width:${cp.toFixed(1)}%;background:#35C08A"></div>` : '') +
+                      (owed > 0 ? `<div style="flex:1;background:#E2614A"></div>` : '');
+      lbl.innerHTML = `<span>Cash ${Math.round(cp)}%</span><span>Owed ${100 - Math.round(cp)}%</span>`;
+      bar.classList.remove('hidden'); lbl.classList.remove('hidden'); lbl.classList.add('flex');
+    } else {
+      bar.classList.add('hidden'); lbl.classList.add('hidden'); lbl.classList.remove('flex');
+    }
   }
 
   function accountsIn(list) {
@@ -1839,7 +1900,11 @@ tailwind.config = {
   function dueStrip(n) {
     const info = accounts[n] || {};
     const dt = nextDue(info);
-    if (!dt || duePaidBy(n)) return '';           // paid this cycle: nothing due
+    if (!dt) return '';
+    if (duePaidBy(n)) {                            // paid this cycle: no due date shown
+      return `<p class="mt-1.5 pl-[42px]"><span class="text-[12px] font-semibold inline-flex items-center gap-1" style="color:#6FD3A8">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>Paid this cycle</span></p>`;
+    }
     const col = dueColor(dt);
     const soon = daysUntilDue(dt) <= 10;
     return `<p class="mt-1.5 pl-[42px]">
@@ -2358,9 +2423,31 @@ tailwind.config = {
 
   function exitSelect() { selectMode = false; selected.clear(); renderAcctSheet(); }
 
+  /* Search looks through every month, not just the one on screen. */
+  function matchesSearch(t, q) {
+    if ((t.desc || '').toLowerCase().includes(q)) return true;
+    if ((t.cat || '').toLowerCase().includes(q)) return true;
+    if ((t.acct || '').toLowerCase().includes(q)) return true;
+    const n = q.replace(/[$,\s]/g, '');
+    return /^\d+(\.\d*)?$/.test(n) && Math.abs(t.amount).toFixed(2).startsWith(n);
+  }
+  function dayHead(d) {
+    const [y, m, dd] = d.split('-').map(Number);
+    return new Date(y, m - 1, dd).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+  }
+
   function renderTransactions(all) {
     const box = $('txList');
-    const list = acctFilter === 'All' ? all : all.filter(t => (t.acct || 'Unassigned') === acctFilter);
+    const q = searchQ.trim().toLowerCase();
+    const base = q ? transactions.filter(t => matchesSearch(t, q)) : all;
+    const list = acctFilter === 'All' ? base : base.filter(t => (t.acct || 'Unassigned') === acctFilter);
+    $('txHeading').textContent = q ? list.length + (list.length === 1 ? ' match' : ' matches') + ' in all months'
+                                   : monthShort(viewMonth).split(' ')[0] + ' transactions';
+    if (q && !list.length) {
+      box.innerHTML = `<div class="px-4 py-8 text-center"><p class="text-[15px] font-medium">Nothing matches that</p>
+        <p class="text-[13px] text-muted mt-1">Try part of a merchant name, a category or an amount.</p></div>`;
+      return;
+    }
     if (!list.length) {
       box.innerHTML = `<div class="px-4 py-8 text-center">
         <p class="text-[15px] font-medium">No entries for ${esc(monthShort(viewMonth))}</p>
@@ -2368,18 +2455,27 @@ tailwind.config = {
       return;
     }
     const sorted = list.slice().sort((a, b) => sortDesc ? (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) : (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
-    box.innerHTML = sorted.map(t => `
+    let lastDay = '';
+    box.innerHTML = sorted.map(t => {
+      let head = '';
+      if (t.date !== lastDay) {
+        lastDay = t.date;
+        const dayOut = sorted.filter(x => x.date === t.date && !x.xfer && x.amount > 0).reduce((a, x) => a + x.amount, 0);
+        head = `<div class="flex justify-between px-4 pt-3 pb-1.5 bg-page/50 text-[11px] font-bold tracking-wide text-muted num"><span>${esc(dayHead(t.date))}</span><span>${dayOut ? money(dayOut) : ''}</span></div>`;
+      }
+      return head + `
       <div class="flex items-center gap-3 px-4 py-3 active:bg-page" data-edit="${t.id}">
         ${t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:34px;height:34px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 19)}</span>` : t.amount < 0 ? catChip('Income', 34) : catChip(t.cat, 34)}
         <div class="min-w-0 flex-1">
           <p class="text-[16px] font-medium truncate">${esc(t.desc)}</p>
-          <p class="num text-[13px] text-muted truncate">${esc(dayLabel(t.date))} · ${t.xfer ? 'Payment' : esc(t.cat)}${t.acct && t.acct !== 'Unassigned' ? ' · ' + esc(t.acct) : ''}</p>
+          <p class="num text-[13px] text-muted truncate">${t.xfer ? 'Payment' : esc(t.cat)}${t.acct && t.acct !== 'Unassigned' ? ' · ' + esc(t.acct) : ''}</p>
         </div>
         <div class="num text-[16px] font-semibold shrink-0 ${t.amount < 0 && !t.xfer ? 'text-income' : ''}" ${t.xfer ? 'style="color:#4F93D6"' : ''}>${t.xfer ? (t.amount < 0 ? '+' : '') + money(Math.abs(t.amount)) : t.amount < 0 ? '+' + money(Math.abs(t.amount)) : money(t.amount)}</div>
         <button data-del="${t.id}" aria-label="Delete ${esc(t.desc)}" class="w-8 h-8 -mr-1 shrink-0 grid place-items-center rounded-full text-muted active:bg-page">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   /* =============================================================
@@ -2407,13 +2503,35 @@ tailwind.config = {
   /* =============================================================
      EVENTS
   ============================================================= */
+  /* Tabs: Home, Activity, Cards, Spending. The + button opens the paste sheet. */
+  const TABS = ['home', 'activity', 'cards', 'spending'];
+  function showTab(k) {
+    TABS.forEach(t => {
+      $('panel-' + t).classList.toggle('hidden', t !== k);
+      const b = $('tab-' + t);
+      b.classList.toggle('text-ink', t === k);
+      b.classList.toggle('text-muted', t !== k);
+      if (t === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+  TABS.forEach(t => { $('tab-' + t).onclick = () => showTab(t); });
+  $('txSearch').addEventListener('input', function () { searchQ = this.value; render(); });
+  $('logOneBtn').onclick = function () {
+    draft = []; draftNotes = []; draftDupes = [];
+    $('bulkAcct').innerHTML = optionsHtml(knownAccounts(), '', 'Leave as detected');
+    refreshCatOptions();
+    showStep(2);
+    $('addRowBtn').onclick();
+  };
+
   $('prevMonth').onclick = () => { viewMonth = shiftMonth(viewMonth, -1); render(); syncBudgetField(); renderCatSheet(); renderAcctSheet(); };
   $('nextMonth').onclick = () => { viewMonth = shiftMonth(viewMonth, 1); render(); syncBudgetField(); renderCatSheet(); renderAcctSheet(); };
   $('toggleSort').onclick = function () { sortDesc = !sortDesc; this.textContent = sortDesc ? 'Newest first' : 'Oldest first'; render(); };
 
   $('openPaste').onclick = () => { $('pasteMsg').classList.add('hidden'); showStep(1); refreshCatOptions(); openSheet($('pasteSheet')); setTimeout(() => $('bulkInput').focus(), 250); };
-  $('openData').onclick = () => { $('dataMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); };
-  $('editIncome').onclick = () => { $('dataMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); setTimeout(() => { $('incomeInput').focus(); $('incomeInput').scrollIntoView({ block: 'center' }); }, 250); };
+  $('openData').onclick = () => { $('setMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); };
+  $('editIncome').onclick = () => { $('setMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); setTimeout(() => { $('incomeInput').focus(); $('incomeInput').scrollIntoView({ block: 'center' }); }, 250); };
 
   $('acctList').addEventListener('click', function (e) {
     const btn = e.target.closest('[data-acct]');
@@ -2593,7 +2711,7 @@ tailwind.config = {
     $('bulkAcct').innerHTML = optionsHtml(knownAccounts(), keep, 'Leave as detected');
   });
 
-  $('editBudget').onclick = () => { $('dataMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); setTimeout(() => $('budgetInput').focus(), 250); };
+  $('editBudget').onclick = () => { $('setMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); setTimeout(() => $('budgetInput').focus(), 250); };
   $('scrim').onclick = closeSheets;
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheets);
   // Tapping the handle closes too, for anyone who would rather tap than swipe.
@@ -2844,28 +2962,28 @@ tailwind.config = {
 
   $('saveIncome').onclick = function () {
     const v = parseFloat($('incomeInput').value);
-    if (isNaN(v) || v < 0) { showMsg($('dataMsg'), 'Enter a number for your income, like 4200.', 'bad'); $('dataMsg').classList.remove('hidden'); return; }
+    if (isNaN(v) || v < 0) { showMsg($('setMsg'), 'Enter a number for your income, like 4200.', 'bad'); $('setMsg').classList.remove('hidden'); return; }
     if ($('incomeAllMonths').checked) { incomes.default = v; delete incomes[viewMonth]; } else { incomes[viewMonth] = v; }
     save(); render();
     syncBudgetField();
-    showMsg($('dataMsg'), v ? 'Income saved.' : 'Income cleared — deposits you paste are the only income now.', 'good');
-    $('dataMsg').classList.remove('hidden'); toast(v ? 'Income saved' : 'Income cleared');
+    showMsg($('setMsg'), v ? 'Income saved.' : 'Income cleared — deposits you paste are the only income now.', 'good');
+    $('setMsg').classList.remove('hidden'); toast(v ? 'Income saved' : 'Income cleared');
   };
   $('countDeposits').onchange = function () { settings.countDeposits = this.checked; save(); render(); paintIncomeReadout(); };
   $('primaryAcct').onchange = function () {
     settings.primaryAcct = this.value.trim() ? titleCaseAcct(this.value) : '';
     this.value = settings.primaryAcct;
     save(); refreshCatOptions(); render();
-    showMsg($('dataMsg'), settings.primaryAcct ? settings.primaryAcct + ' is now your primary account. Income and anything with no card attached goes there.' : 'Primary account cleared.', 'good');
-    $('dataMsg').classList.remove('hidden');
+    showMsg($('setMsg'), settings.primaryAcct ? settings.primaryAcct + ' is now your primary account. Income and anything with no card attached goes there.' : 'Primary account cleared.', 'good');
+    $('setMsg').classList.remove('hidden');
   };
 
   $('saveBudget').onclick = function () {
     const v = parseFloat($('budgetInput').value);
-    if (isNaN(v) || v < 0) { showMsg($('dataMsg'), 'Enter a number for the budget, like 2500.', 'bad'); $('dataMsg').classList.remove('hidden'); return; }
+    if (isNaN(v) || v < 0) { showMsg($('setMsg'), 'Enter a number for the budget, like 2500.', 'bad'); $('setMsg').classList.remove('hidden'); return; }
     if ($('budgetAllMonths').checked) { budgets.default = v; delete budgets[viewMonth]; } else { budgets[viewMonth] = v; }
     save(); render();
-    showMsg($('dataMsg'), 'Budget saved.', 'good'); $('dataMsg').classList.remove('hidden'); toast('Budget saved');
+    showMsg($('setMsg'), 'Budget saved.', 'good'); $('setMsg').classList.remove('hidden'); toast('Budget saved');
   };
 
   function backupJson(pretty) {
@@ -3067,7 +3185,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-24 · 60';
+  const BUILD = '2026-09-27 · 61';
 
   /* =============================================================
      KEEPING THE DATA
@@ -3209,7 +3327,7 @@ tailwind.config = {
     $('exportBtn').textContent = 'Save backup\u2026';
     $('backupNagBtn').textContent = 'Save it';
   }
-  render(); syncBudgetField(); refreshCatOptions(); showBuild();
+  render(); syncBudgetField(); refreshCatOptions(); showBuild(); showTab('home');
   try { requestPersistence(); } catch (e) { /* older browser, storage API missing */ }
 })();
 </script>
