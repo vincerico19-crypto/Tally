@@ -639,6 +639,18 @@ tailwind.config = {
     if (!isFinite(n)) return null;
     return { raw: best.raw, value: best.neg ? -n : n, start: best.start, end: best.end };
   }
+  /* "Take 5 Oil Change": a plain whole number with words on both sides is part
+     of the name, when the paste has real amounts ($, cents) to pair it with. */
+  function numberInName(text, hit) {
+    if (!hit || hit.value < 0 || /\./.test(hit.raw)) return false;
+    const before = text.slice(0, hit.start), after = text.slice(hit.end);
+    if (/[$\u20ac\u00a3]\s?$/.test(before) || /^\s?(usd|dollars?)\b/i.test(after)) return false;
+    return /[A-Za-z]/.test(before) && /^\s*[A-Za-z]/.test(after) && /[A-Za-z]{2,}/.test(after);
+  }
+  function strongAmount(text, hit) {
+    return !!hit && (/\.\d/.test(hit.raw) || /[$\u20ac\u00a3]\s?$/.test(text.slice(0, hit.start)));
+  }
+
   function toNumber(raw, context) {
     const hit = findAmount(ocrFix(String(raw)));
     if (!hit) return null;
@@ -1030,7 +1042,25 @@ tailwind.config = {
       const d = findDate(g.s);
       const a = findAmount(d ? g.s.replace(d.match, ' ') : g.s);
       const cd = cleanDesc(d ? g.s.replace(d.match, ' ') : g.s);
-      return { date: !!d && !a, amt: !!a, desc: !d && !a && !!cd && !asCategory(cd), text: cd || '' };
+      const body = d ? g.s.replace(d.match, ' ') : g.s;
+      const bare = !!a && !cleanDesc(body.slice(0, a.start) + ' ' + body.slice(a.end));
+      return { date: !!d && !a, amt: !!a, desc: !d && !a && !!cd && !asCategory(cd), text: cd || '',
+               strong: strongAmount(body, a), inName: numberInName(body, a), bare: bare, body: body };
+    });
+    /* A plain number is part of the merchant's name ("Take 5 Oil Change",
+       "FIVE BELOW 1142", "7-ELEVEN") when the paste has real amounts ($ or
+       cents) and either the number sits between words, or the line's own real
+       amount is the one printed on its own right underneath it. */
+    const hasStrong = scan.some(x => x.strong);
+    if (hasStrong) scan.forEach((x, i) => {
+      if (!x.amt || x.strong || x.bare) return;
+      let n = i + 1;
+      while (n < scan.length && !scan[n].amt && !scan[n].desc && !scan[n].date) n++;
+      const amountBelow = n < scan.length && scan[n].amt && scan[n].strong && scan[n].bare;
+      if (x.inName || amountBelow) {
+        x.amt = false; x.date = false; x.desc = true; x.nameLine = true;
+        x.text = cleanDesc(x.body) || x.text;
+      }
     });
     /* Two layouts share this parser. Most apps put each amount right after its
        merchant, so consecutive text lines are one merchant's wrapped name plus
@@ -1106,6 +1136,7 @@ tailwind.config = {
       const dateHit = findDate(s);
       let rest = dateHit ? s.replace(dateHit.match, ' ') : s;
       let amtHit = findAmount(rest);
+      if (amtHit && scan[lineIdx] && scan[lineIdx].nameLine) amtHit = null;   // "Take 5 Oil Change", "FIVE BELOW 1142"
 
       /* "$120 Disney" / "Streaming Credit" / "-$10.00" — the first line is the
          name of an offer, not the charge. A round figure at the very start of a
@@ -3229,7 +3260,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-27 · 62';
+  const BUILD = '2026-09-27 · 63';
 
   /* =============================================================
      KEEPING THE DATA
