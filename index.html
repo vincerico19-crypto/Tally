@@ -875,6 +875,15 @@ tailwind.config = {
     return 'Unassigned';
   }
 
+  /* "NOEMY RICO": two or three plain words, no digits or symbols, and nothing
+     any shop rule, learned merchant or payment pattern recognises. */
+  function looksLikeCardholder(t) {
+    const s = String(t || '').trim();
+    if (!/^[A-Za-z][A-Za-z'-]{1,14}(\s+[A-Za-z][A-Za-z'-]{0,14}){1,2}$/.test(s)) return false;
+    if (looksLikeTransfer(s)) return false;
+    return guessCategory(s, false) === 'Uncategorized';
+  }
+
   function guessCategory(desc, isIncome) {
     const learned = rememberedCat(desc);
     if (learned) return learned;
@@ -1021,7 +1030,7 @@ tailwind.config = {
       const d = findDate(g.s);
       const a = findAmount(d ? g.s.replace(d.match, ' ') : g.s);
       const cd = cleanDesc(d ? g.s.replace(d.match, ' ') : g.s);
-      return { date: !!d && !a, amt: !!a, desc: !d && !a && !!cd && !asCategory(cd) };
+      return { date: !!d && !a, amt: !!a, desc: !d && !a && !!cd && !asCategory(cd), text: cd || '' };
     });
     /* Two layouts share this parser. Most apps put each amount right after its
        merchant, so consecutive text lines are one merchant's wrapped name plus
@@ -1046,7 +1055,29 @@ tailwind.config = {
     }
 
 
+    /* Card apps print the cardholder's name in small text under the merchant
+       ("DOLLARTREE" / "NOEMY RICO"). When a screenshot is copied as a column of
+       names followed by a column of amounts, that name looks like one more
+       merchant, and every amount after it lands on the wrong row. If there are
+       more names than amounts, the extras are those labels: a person-like name
+       sitting right under another name that no shop rule recognises. */
+    const skipLine = new Set();
+    const amtCount = scan.filter(x => x.amt).length;
+    if (!interleaved && firstAmt > 0 && amtCount >= 2) {     // a real column of amounts
+      const amts = amtCount;
+      const names = [];
+      for (let i = Math.max(headerCut + 1, 0); i < firstAmt; i++) if (scan[i].desc) names.push(i);
+      let surplus = names.length - amts;
+      for (let k = 1; k < names.length && surplus > 0; k++) {
+        const i = names[k];
+        let prev = i - 1;
+        while (prev >= 0 && !scan[prev].desc && !scan[prev].amt && !scan[prev].date) prev--;
+        if (prev >= 0 && scan[prev].desc && looksLikeCardholder(scan[i].text)) { skipLine.add(i); surplus--; }
+      }
+    }
+
     raw.split(/\r?\n/).forEach((line, lineIdx) => {
+      if (skipLine.has(lineIdx)) return;
       const g = gate(line);
       if (!g) { return; }
       let s = g.s;
@@ -1141,6 +1172,12 @@ tailwind.config = {
         // a second transaction that does not exist.
         if (lastWasDesc && pending.length) {
           const last = pending[pending.length - 1];
+          // A cardholder name read just after the previous row's amount belongs
+          // to that row, not to the merchant coming next. Start fresh.
+          if (interleaved && last.afterRow && looksLikeCardholder(last.desc) && !looksLikeCardholder(leftover)) {
+            last.desc = leftover; last.afterRow = false;
+            return;
+          }
           // ...unless one of them is a payment and the other is a shop; those
           // are two separate rows that happen to sit next to each other.
           let split = looksLikeTransfer(last.desc) && !looksLikeTransfer(leftover);
@@ -1148,6 +1185,9 @@ tailwind.config = {
           if (last.desc.toLowerCase() === leftover.toLowerCase()) split = true;
           // A name only wraps once it has filled the line. "SHELL OIL" is far
           // too short to have wrapped, so what follows is the next merchant.
+          // Under a merchant too short to have wrapped, a bare person's name is
+          // the cardholder label, not part of the shop and not a second shop.
+          if (interleaved && last.desc.length < 14 && looksLikeCardholder(leftover)) return;
           if (!interleaved && last.desc.length < 14) split = true;
           // A plain two-word name tacked onto an already-full merchant line is
           // the cardholder the app prints underneath, not part of the shop.
@@ -1158,7 +1198,7 @@ tailwind.config = {
           }
         }
 
-        pending.push({ desc: leftover, cat: heldCat, date: lastDate });
+        pending.push({ desc: leftover, cat: heldCat, date: lastDate, afterRow: !lastWasDesc && rows.length > 0 });
         heldCat = null;
         lastWasDesc = true;
         if (pending.length > 10) pending.shift();
@@ -1195,6 +1235,10 @@ tailwind.config = {
         if (p) { desc = p.desc; cat = p.cat; queuedDate = p.date || todayISO(); }
       } else if (pending.length) {
         const p = pending.shift();
+        // The previous row's cardholder label, not the start of this name
+        if (interleaved && p.afterRow && looksLikeCardholder(p.desc) && !looksLikeCardholder(desc)) {
+          // drop it; this line carries its own merchant and amount
+        } else
         // "Electronic Payment" and "Ezschool" are two rows, not one name
         if (looksLikeTransfer(p.desc) !== looksLikeTransfer(desc)) {
           rows.push(makeRow(p.desc, p.cat, p.date || lastDate || todayISO(), null, runAcct, bankMode));
@@ -3185,7 +3229,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-27 · 61';
+  const BUILD = '2026-09-27 · 62';
 
   /* =============================================================
      KEEPING THE DATA
