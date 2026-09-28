@@ -688,7 +688,8 @@ tailwind.config = {
       .replace(/\s{2,}/g, ' ')
       .replace(/^[\s\-–—:]+|[\s\-–—:]+$/g, '')
       .trim()
-      .replace(/^\d{3,4}\s+(?=[a-z])/i, '');        // leading posting code
+      .replace(/^\d{3,4}\s+(?=[a-z])/i, '')        // leading posting code
+      .replace(/^[^\p{L}\p{N}]+$/u, '');            // stray symbols (＞, ❯, ✓) are not a name
   }
   function prettyDesc(s) {
     const c = cleanDesc(s);
@@ -986,7 +987,7 @@ tailwind.config = {
         .replace(/([^\d])[.\u2026]+\s*\d{4}\b/g, '$1 ')        // "…7752" with one ellipsis
         .replace(/\b[A-Z][a-z]+\s+[A-Z]\.?\s*$/g, ' ')          // the cardholder left behind
         .replace(/\b(ending in|ending)\s*\d{4}\b/gi, ' ')
-        .replace(/[\u203a\u00bb\u2039\u00ab>\u2192]+/g, ' ')
+        .replace(/[\u203a\u00bb\u2039\u00ab>\u2192\uff1e\uff1c\u3009\u3008\u2329\u232a\u27e8\u27e9\u276f\u276e\u276d\u276c\u25b8\u25b6\u25c2\u25c0\ufe65\u2023\u27a4\u2794\u279c]+/g, ' ')
         .replace(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\b,?/gi, ' ')
         .replace(/[\u2022\u00b7|]+/g, ' ')
         .replace(/\s{2,}/g, ' ')
@@ -3260,7 +3261,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-27 · 63';
+  const BUILD = '2026-09-27 · 64';
 
   /* =============================================================
      KEEPING THE DATA
