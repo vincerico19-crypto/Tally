@@ -1107,6 +1107,13 @@ tailwind.config = {
       }
     }
 
+    /* Names listed first, amounts after: if there are at least as many names as
+       amounts, every amount is a transaction and none can be a running balance.
+       (An account name on its own, like "SECURITY SERVICE", is not a name.) */
+    const colNames = !interleaved && firstAmt > 0
+      ? scan.filter((x, i) => i < firstAmt && x.desc && guessAccount(x.text) === 'Unassigned').length : 0;
+    const balancesPossible = interleaved || colNames < amtCount;
+
     raw.split(/\r?\n/).forEach((line, lineIdx) => {
       if (skipLine.has(lineIdx)) return;
       const g = gate(line);
@@ -1246,8 +1253,17 @@ tailwind.config = {
       /* Checking apps print the running balance right under each amount, and the
          account's own balance at the top. Neither is a transaction: the first is
          a second bare amount in a row, the second has no merchant waiting. */
+      // A second bare amount straight after the one that took the last waiting
+      // name is that row's running balance ("$2,194.46" / "$2,678.65"), in any
+      // app, not just ones Tally recognises as checking.
+      if (!desc && !dateHit && !pending.length && lastWasBareAmount && value > 0 && balancesPossible) {
+        // ...unless a name follows it: then it is an amount copied before its name.
+        let n = lineIdx + 1;
+        while (n < scan.length && !scan[n].amt && !scan[n].desc && !scan[n].date) n++;
+        const nameNext = n < scan.length && scan[n].desc;
+        if (!nameNext) { lastWasBareAmount = false; return; }
+      }
       if (bankMode && !desc && !dateHit) {
-        if (lastWasBareAmount) { lastWasBareAmount = false; return; }   // the running balance
         if (!pending.length) {
           // No merchant waiting. At the top of the screen that is the account's
           // own balance; further down it is an amount OCR put before its name.
@@ -1256,7 +1272,7 @@ tailwind.config = {
         }
         lastWasBareAmount = true;
       } else {
-        lastWasBareAmount = false;
+        lastWasBareAmount = !dateHit && (!!desc || pending.length > 0);   // a row just got its amount
       }
       let cat = null, queuedDate = null;
 
@@ -1295,7 +1311,7 @@ tailwind.config = {
       const isXfer = looksLikeTransfer(s + ' ' + desc) || cat === 'Transfer' || toOwnAccount;
       if (bankMode) {
         signed = value < 0 ? Math.abs(value) : -Math.abs(value);   // minus means it left the account
-      } else if (!isXfer && signed > 0 && INCOME_HINTS.test(s)) {
+      } else if (!isXfer && signed > 0 && INCOME_HINTS.test(s + ' ' + desc)) {   // "PAYROLL" / "$2,194.46"
         signed = -signed;
       }
 
@@ -3261,7 +3277,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-27 · 64';
+  const BUILD = '2026-09-28 · 65';
 
   /* =============================================================
      KEEPING THE DATA
