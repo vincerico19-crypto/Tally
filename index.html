@@ -2443,7 +2443,14 @@ tailwind.config = {
     const out = rows.filter(t => t.amount > 0 && !t.xfer).reduce((s, t) => s + t.amount, 0);
     const inn = rows.filter(t => t.amount < 0 && !t.xfer).reduce((s, t) => s + Math.abs(t.amount), 0);
     const paid = rows.filter(t => t.xfer).reduce((s, t) => s + Math.abs(t.amount), 0);
-    const net = inn - out - paid;
+    /* Same rules as the balance itself. A card: charges add to what you owe,
+       payments and refunds take it down. A bank: a transfer's sign says which
+       way it went (minus came in, plus went out). */
+    const acctIsBank = acctIcon(name) === 'bank' || acctIcon(name) === 'vault';
+    const xferIn = rows.filter(t => t.xfer && t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const xferOut = rows.filter(t => t.xfer && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const net = acctIsBank ? inn + xferIn - out - xferOut      // change in cash
+                           : out - inn - paid;                 // change in what you owe
 
     $('acctSheetHead').innerHTML = `
       <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:36px;height:36px;background:${color}2E">${iconSvg(acctIcon(name), color, 20)}</span>
@@ -2491,13 +2498,22 @@ tailwind.config = {
 
     const stats = `
       <div class="px-5 py-4 border-b border-line">
+        ${acctIsBank ? `
         <p class="text-[13px] text-muted">Net for the month</p>
-        <p class="num text-[30px] leading-none font-semibold tracking-tight mt-1 ${net < 0 ? 'text-over' : 'text-income'}">${net >= 0 ? '+' : ''}${money(net)}</p>
+        <p class="num text-[30px] leading-none font-semibold tracking-tight mt-1 ${net < 0 ? 'text-over' : 'text-income'}">${net >= 0 ? '+' : '\u2212'}${money(Math.abs(net))}</p>
         <div class="mt-4 space-y-1.5 text-[13px]">
-          ${inn ? `<div class="flex justify-between"><span class="text-muted">Money in</span><span class="num font-medium text-income">${money(inn)}</span></div>` : ''}
-          <div class="flex justify-between"><span class="text-muted">Spent</span><span class="num font-medium">${money(out)}</span></div>
-          ${paid ? `<div class="flex justify-between"><span class="text-muted">Payments &amp; transfers</span><span class="num font-medium text-muted">${money(paid)}</span></div>` : ''}
-        </div>
+          ${inn ? `<div class="flex justify-between"><span class="text-muted">Money in</span><span class="num font-medium text-income">+${money(inn)}</span></div>` : ''}
+          ${xferIn ? `<div class="flex justify-between"><span class="text-muted">Transfers in</span><span class="num font-medium text-income">+${money(xferIn)}</span></div>` : ''}
+          <div class="flex justify-between"><span class="text-muted">Spent</span><span class="num font-medium">\u2212${money(out)}</span></div>
+          ${xferOut ? `<div class="flex justify-between"><span class="text-muted">Card payments &amp; transfers out</span><span class="num font-medium text-muted">\u2212${money(xferOut)}</span></div>` : ''}
+        </div>` : `
+        <p class="text-[13px] text-muted">${net > 0 ? 'Owed went up this month' : net < 0 ? 'Paid down this month' : 'No change this month'}</p>
+        <p class="num text-[30px] leading-none font-semibold tracking-tight mt-1 ${net > 0 ? 'text-over' : 'text-income'}">${net > 0 ? '+' : net < 0 ? '\u2212' : ''}${money(Math.abs(net))}</p>
+        <div class="mt-4 space-y-1.5 text-[13px]">
+          <div class="flex justify-between"><span class="text-muted">Charged</span><span class="num font-medium">+${money(out)}</span></div>
+          ${inn ? `<div class="flex justify-between"><span class="text-muted">Refunds</span><span class="num font-medium text-income">\u2212${money(inn)}</span></div>` : ''}
+          ${paid ? `<div class="flex justify-between"><span class="text-muted">Payments &amp; credits</span><span class="num font-medium" style="color:#4F93D6">\u2212${money(paid)}</span></div>` : ''}
+        </div>`}
         ${paid ? `<p class="text-[12px] text-muted mt-3 leading-relaxed">Payments are money you moved, not money you spent, so they stay out of your budget total.</p>` : ''}
       </div>
       ${catRows.length ? `<div class="px-5 py-4 border-b border-line">
@@ -3437,7 +3453,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-28 · 66';
+  const BUILD = '2026-09-29 · 67';
 
   /* =============================================================
      KEEPING THE DATA
