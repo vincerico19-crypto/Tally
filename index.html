@@ -1152,6 +1152,46 @@ tailwind.config = {
       ? scan.filter((x, i) => i < firstAmt && x.desc && guessAccount(x.text) === 'Unassigned').length : 0;
     const balancesPossible = interleaved || colNames < amtCount;
 
+    /* Name, amount, running balance ("BRANCH MESSENGER P2P" / "$14.65" /
+       "$2,740.00"). When every name is followed by exactly two bare amounts,
+       the second is the balance: skip it. Neighbouring balances then say which
+       way each amount went: $2,740.00 - $2,725.35 = $14.65 came in. */
+    const forcedDir = new Map();                 // amount line -> 'in' | 'out'
+    {
+      const groups = [];
+      let g = null, lead = false;
+      scan.forEach((x, i) => {
+        if (x.date) { g = null; return; }
+        if (x.desc) {
+          if (!g || g.amts.length) { g = { names: [], amts: [] }; groups.push(g); }
+          g.names.push(i);
+          return;
+        }
+        if (x.amt) {
+          if (!g) { lead = true; return; }
+          if (x.bare) g.amts.push(i); else g = null;
+        }
+      });
+      const withAmts = groups.filter(q => q.amts.length);
+      const realNames = q => q.names.filter(i => guessAccount(scan[i].text) === 'Unassigned').length;
+      const shaped = !lead && withAmts.length && withAmts.length === groups.length &&
+        withAmts.every(q => q.amts.length === 2) &&
+        (withAmts.length > 1 || realNames(withAmts[0]) <= 1);
+      if (shaped) {
+        const val = i => { const h = findAmount(scan[i].body); return h ? Math.abs(h.value) : NaN; };
+        const G = withAmts.map(q => ({ at: q.amts[0], amt: val(q.amts[0]), bal: val(q.amts[1]) }));
+        withAmts.forEach(q => skipLine.add(q.amts[1]));
+        const near = (a, b) => Math.abs(a - b) < 0.005;
+        G.forEach((q, k) => {
+          const older = G[k + 1], newer = G[k - 1];
+          if (older && near(q.bal - older.bal, q.amt)) forcedDir.set(q.at, 'in');        // newest first
+          else if (older && near(older.bal - q.bal, q.amt)) forcedDir.set(q.at, 'out');
+          else if (newer && near(q.bal - newer.bal, q.amt)) forcedDir.set(q.at, 'in');   // oldest first
+          else if (newer && near(newer.bal - q.bal, q.amt)) forcedDir.set(q.at, 'out');
+        });
+      }
+    }
+
     raw.split(/\r?\n/).forEach((line, lineIdx) => {
       if (skipLine.has(lineIdx)) return;
       const g = gate(line);
@@ -1369,7 +1409,10 @@ tailwind.config = {
       // that bank, not to Venmo — the statement it came from wins.
       let lineAcct = guessAccount(s);
       if (/^(venmo|paypal|cash app)$/i.test(lineAcct) && runAcct !== 'Unassigned') lineAcct = 'Unassigned';
-      rows.push(makeRow(usedDate, desc, Math.abs(signed) * (isXfer ? 1 : Math.sign(signed)), {
+      // The running balance settled the direction: trust it over any guess.
+      const fd = forcedDir.get(lineIdx);
+      if (fd) signed = fd === 'in' ? -Math.abs(value) : Math.abs(value);
+      rows.push(makeRow(usedDate, desc, Math.abs(signed) * (isXfer ? (fd === 'in' ? -1 : 1) : Math.sign(signed)), {
         xfer: isXfer,
         cat: rememberedCat(desc) || cat,
         guessedDate: !dateHit && !queuedDate,
@@ -3466,7 +3509,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-29 · 68';
+  const BUILD = '2026-09-30 · 69';
 
   /* =============================================================
      KEEPING THE DATA
