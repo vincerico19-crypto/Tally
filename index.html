@@ -1241,6 +1241,7 @@ tailwind.config = {
           }));
           heldCat = null;
           lastWasDesc = false;
+          lastWasBareAmount = true;          // a balance printed under it is not a row
           return;
         }
 
@@ -1300,6 +1301,17 @@ tailwind.config = {
         while (n < scan.length && !scan[n].amt && !scan[n].desc && !scan[n].date) n++;
         const nameNext = n < scan.length && scan[n].desc;
         if (!nameNext) { lastWasBareAmount = false; return; }
+      }
+      // "$10.00" / "Vincent Rico" / "$2,725.35": an amount with no name waiting
+      // and a name right under it is that name's amount, in any app.
+      if (!bankMode && !desc && !dateHit && !pending.length && !orphanAmount) {
+        let n = lineIdx + 1;
+        while (n < scan.length && !scan[n].amt && !scan[n].desc && !scan[n].date) n++;
+        if (n < scan.length && scan[n].desc) {
+          orphanAmount = { value: value, date: lastDate };
+          lastWasBareAmount = false;
+          return;
+        }
       }
       if (bankMode && !desc && !dateHit) {
         if (!pending.length) {
@@ -1407,11 +1419,9 @@ tailwind.config = {
 
   function refreshCatOptions() {
     $('catOptions').innerHTML = knownCategories().map(c => `<option value="${esc(c)}">`).join('');
-    const accts = new Set(['Capital One','Capital One Savor','Capital One Venture X','Capital One Quicksilver','Amex','Discover','Chase','Citi','Apple Card','Frost','Checking','Savings','Cash','PayPal','Venmo','Cash App']);
-    transactions.forEach(t => { if (t.acct && t.acct !== 'Unassigned') accts.add(t.acct); });
-    if (settings.primaryAcct) accts.add(settings.primaryAcct);
-    accts.add('Frost');
-    ACCT_RULES.forEach(r => accts.add(r[1]));
+    // Only accounts you actually have, not every bank Tally knows the name of
+    const accts = new Set(knownAccounts());
+    accts.delete('Unassigned');
     $('acctOptions').innerHTML = Array.from(accts).sort().map(a => `<option value="${esc(a)}">`).join('');
   }
 
@@ -2654,6 +2664,9 @@ tailwind.config = {
       const low = a.toLowerCase();
       if (low === want || low.startsWith(want + ' ') || low.endsWith(' ' + want)) return a;
     }
+    /* Once you have accounts set up, a bank mentioned in a paste ("SECURITY
+       SERVICE PAYROLL") does not quietly become a new account. You pick. */
+    if (Object.keys(accounts).length) return 'Unassigned';
     return name;
   }
 
@@ -3453,7 +3466,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-29 · 67';
+  const BUILD = '2026-09-29 · 68';
 
   /* =============================================================
      KEEPING THE DATA
@@ -3518,7 +3531,11 @@ tailwind.config = {
           <span class="shrink-0 grid place-items-center rounded-[.5rem]" style="width:24px;height:24px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 14)}</span>
           <span class="text-[14px] font-medium truncate flex-1">${esc(n)}</span>
           ${lim > 0 ? `<span class="num text-[12px] shrink-0" style="color:${col}">${Math.round(pct)}% used</span>` : ''}
+          <button data-delacct="${esc(n)}" aria-label="Delete ${esc(n)}" class="shrink-0 w-8 h-8 -my-1 -mr-1 grid place-items-center rounded-full text-muted active:bg-line">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+          </button>
         </div>
+        <div data-delpanel="${esc(n)}" class="hidden"></div>
         <div class="flex gap-2">
           <input class="cell num text-[14px]" type="number" inputmode="decimal" step="0.01" placeholder="${isBank ? 'Balance' : 'Owed'}" value="${bd.start ? bd.start : ''}" data-bal="${esc(n)}" aria-label="${esc(n)} balance">
           ${isBank ? '' : `<input class="cell num text-[14px]" type="number" inputmode="decimal" step="1" placeholder="Limit" value="${lim ? lim : ''}" data-lim="${esc(n)}" aria-label="${esc(n)} credit limit">`}
@@ -3551,6 +3568,56 @@ tailwind.config = {
       });
     });
   }
+
+  /* Delete an account. Its transactions are never deleted: they move to the
+     account you pick (or Unassigned), so your history and totals survive. */
+  function deleteAccount(name, moveTo) {
+    const to = moveTo && moveTo !== name ? moveTo : 'Unassigned';
+    let moved = 0;
+    transactions.forEach(t => { if ((t.acct || 'Unassigned') === name) { t.acct = to; moved++; } });
+    delete accounts[name];
+    if (settings.primaryAcct === name) settings.primaryAcct = '';
+    if (acctFilter === name) acctFilter = 'All';
+    save(); render(); refreshCatOptions();
+    return moved;
+  }
+  $('balancesList').addEventListener('click', function (e) {
+    const del = e.target.closest('[data-delacct]');
+    if (del) {
+      const n = del.getAttribute('data-delacct');
+      const panel = $('balancesList').querySelector(`[data-delpanel="${CSS.escape(n)}"]`);
+      if (!panel) return;
+      if (!panel.classList.contains('hidden')) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+      const count = transactions.filter(t => (t.acct || 'Unassigned') === n).length;
+      const others = Array.from(knownAccounts()).filter(a => a !== n && a !== 'Unassigned').sort();
+      const isBank = acctIcon(n) === 'bank' || acctIcon(n) === 'vault';
+      const bankGuess = others.find(a => acctIcon(a) === 'bank' || acctIcon(a) === 'vault');
+      const pick = isBank && bankGuess ? bankGuess : 'Unassigned';
+      panel.innerHTML = `<div class="mt-2.5 rounded-xl bg-page border border-line p-3">
+          <p class="text-[13px] font-semibold">Delete ${esc(n)}?</p>
+          ${count ? `<p class="text-[12px] text-muted mt-1 leading-relaxed">Its ${count} transaction${count === 1 ? '' : 's'} will move here. Nothing is deleted.</p>
+          <select data-delto class="cell mt-2 text-[14px]" aria-label="Move transactions to">
+            ${others.concat(['Unassigned']).map(a => `<option value="${esc(a)}" ${a === pick ? 'selected' : ''}>${esc(a)}</option>`).join('')}
+          </select>` : `<p class="text-[12px] text-muted mt-1">It has no transactions.</p>`}
+          <div class="flex gap-2 mt-2.5">
+            <button data-delcancel class="flex-1 h-10 rounded-lg border border-line text-[14px] font-medium active:bg-line">Cancel</button>
+            <button data-delconfirm="${esc(n)}" class="flex-1 h-10 rounded-lg text-white text-[14px] font-semibold active:opacity-80" style="background:#C2503B">Delete</button>
+          </div>
+        </div>`;
+      panel.classList.remove('hidden');
+      return;
+    }
+    const cancel = e.target.closest('[data-delcancel]');
+    if (cancel) { const p = cancel.closest('[data-delpanel]'); p.classList.add('hidden'); p.innerHTML = ''; return; }
+    const ok = e.target.closest('[data-delconfirm]');
+    if (ok) {
+      const n = ok.getAttribute('data-delconfirm');
+      const sel = ok.closest('[data-delpanel]').querySelector('[data-delto]');
+      const to = sel ? sel.value : 'Unassigned';
+      const moved = deleteAccount(n, to);
+      toast(moved ? `${n} deleted · ${moved} moved to ${to}` : `${n} deleted`);
+    }
+  });
 
   // Paying a card is one movement with two ends. Logging it here writes the
   // transaction, so the card and the account it came from both move.
