@@ -513,6 +513,27 @@ tailwind.config = {
       // money, not spending. Catch them up so they leave the budget total.
       if (!t.xfer && (t.cat === 'Transfer' || looksLikeTransfer(t.desc || ''))) t.xfer = true;
     });
+    if (mergeAliasAccounts()) save();
+  }
+
+  /* "Frost" beside "Frost Bank": a short name with no balance of its own that
+     fits exactly one real account is that account. Its rows move over, so the
+     real account's balance counts them. "Capital One" fits two cards, so it is
+     left alone rather than guessed. */
+  function aliasOf(name) {
+    if (!name || name === 'Unassigned' || accounts[name]) return null;
+    const want = name.toLowerCase();
+    const hits = Object.keys(accounts).filter(a => {
+      const low = a.toLowerCase();
+      return low !== want && (low.startsWith(want + ' ') || low.endsWith(' ' + want));
+    });
+    return hits.length === 1 ? hits[0] : null;
+  }
+  function mergeAliasAccounts() {
+    let moved = 0;
+    transactions.forEach(t => { const to = aliasOf(t.acct); if (to) { t.acct = to; moved++; } });
+    const to = aliasOf(settings.primaryAcct); if (to) { settings.primaryAcct = to; moved++; }
+    return moved;
   }
   function save() {
     try {
@@ -957,6 +978,7 @@ tailwind.config = {
       amount: Math.abs(amount),
       dir: (o.xfer != null ? o.xfer : looksLikeTransfer(String(desc))) ? 'xfer' : (isIn ? 'in' : 'out'),
       guessedDate: !!o.guessedDate,
+      guessedDir: !!o.guessedDir,
       guessedCat: !o.cat && guessCategory(desc, isIn) === 'Uncategorized'
     };
   }
@@ -1157,6 +1179,7 @@ tailwind.config = {
        the second is the balance: skip it. Neighbouring balances then say which
        way each amount went: $2,740.00 - $2,725.35 = $14.65 came in. */
     const forcedDir = new Map();                 // amount line -> 'in' | 'out'
+    let balanceLayout = false;
     {
       const groups = [];
       let g = null, lead = false;
@@ -1178,6 +1201,7 @@ tailwind.config = {
         withAmts.every(q => q.amts.length === 2) &&
         (withAmts.length > 1 || realNames(withAmts[0]) <= 1);
       if (shaped) {
+        balanceLayout = true;
         const val = i => { const h = findAmount(scan[i].body); return h ? Math.abs(h.value) : NaN; };
         const G = withAmts.map(q => ({ at: q.amts[0], amt: val(q.amts[0]), bal: val(q.amts[1]) }));
         withAmts.forEach(q => skipLine.add(q.amts[1]));
@@ -1413,6 +1437,7 @@ tailwind.config = {
       const fd = forcedDir.get(lineIdx);
       if (fd) signed = fd === 'in' ? -Math.abs(value) : Math.abs(value);
       rows.push(makeRow(usedDate, desc, Math.abs(signed) * (isXfer ? (fd === 'in' ? -1 : 1) : Math.sign(signed)), {
+        guessedDir: balanceLayout && !fd && !bankMode && signed > 0,   // fell back to Out
         xfer: isXfer,
         cat: rememberedCat(desc) || cat,
         guessedDate: !dateHit && !queuedDate,
@@ -1540,6 +1565,7 @@ tailwind.config = {
       const flags = [];
       if (dup) flags.push('<span class="text-warn">already saved once</span>');
       if (r.guessedDate) flags.push('<span class="text-muted">date assumed</span>');
+      if (r.guessedDir) flags.push('<span style="color:#E9B45A">check In or Out</span>');
       if (r.cat === 'Uncategorized') flags.push('<span class="text-muted">needs a category</span>');
       if (!r.desc || r.desc === 'Untitled') flags.push('<span class="text-warn">needs a name</span>');
       return `
@@ -2700,6 +2726,8 @@ tailwind.config = {
      Match what the app detects onto the name you already use. */
   function resolveAcct(name) {
     if (!name || name === 'Unassigned') return name;
+    const alias = aliasOf(name);
+    if (alias) return alias;                       // "Frost" -> "Frost Bank"
     const mine = knownAccounts();
     if (mine.has(name)) return name;
     const want = name.toLowerCase();
@@ -2913,6 +2941,9 @@ tailwind.config = {
     const typed = prompt('New ' + what + ':', '');
     const name = typed === null ? '' : (what === 'category' ? titleCase(typed) : titleCaseAcct(typed));
     if (!name || name === 'Unassigned') { sel.value = sel.dataset.prev || ''; return true; }
+    // An account you name yourself is real: register it so saving keeps it
+    // (and so it shows in Cards, where it can be deleted).
+    if (what !== 'category' && !accounts[name]) { accounts[name] = {}; save(); }
     const opt = document.createElement('option');
     opt.value = name; opt.textContent = name;
     sel.insertBefore(opt, sel.lastElementChild);
@@ -3202,6 +3233,7 @@ tailwind.config = {
     const i = +btn.dataset.i;
     if (btn.dataset.f === 'dir') {
       draft[i].dir = draft[i].dir === 'out' ? 'in' : draft[i].dir === 'in' ? 'xfer' : 'out';
+      draft[i].guessedDir = false;                 // you have checked it
       if (draft[i].dir === 'in' && draft[i].cat === 'Uncategorized') draft[i].cat = 'Income';
       if (draft[i].dir === 'xfer' && (draft[i].cat === 'Uncategorized' || draft[i].cat === 'Income')) draft[i].cat = 'Transfer';
     }
@@ -3400,6 +3432,7 @@ tailwind.config = {
       if (data.settings && typeof data.settings === 'object') settings = Object.assign({ countDeposits: true, primaryAcct: '' }, data.settings);
       if (data.accounts && typeof data.accounts === 'object') accounts = data.accounts;
       if (data.catBudgets && typeof data.catBudgets === 'object') catBudgets = data.catBudgets;
+      mergeAliasAccounts();
       save(); render(); syncBudgetField();
       markBackedUp();
       showMsg($('dataMsg'), clean.length + ' transactions restored.', 'good'); $('dataMsg').classList.remove('hidden'); toast('Backup restored');
@@ -3509,7 +3542,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-30 · 69';
+  const BUILD = '2026-09-30 · 70';
 
   /* =============================================================
      KEEPING THE DATA
