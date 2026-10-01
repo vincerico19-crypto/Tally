@@ -1762,6 +1762,8 @@ tailwind.config = {
     }
   }
 
+  function isCardAcct(n) { return acctIcon(n) === 'card'; }
+
   function accountsIn(list) {
     const map = {};
     list.forEach(t => {
@@ -1818,6 +1820,21 @@ tailwind.config = {
      that day moves it: charges push it up, payments and refunds pull it down.
      Payments logged on the paying account count too, as long as the card's
      name is in the description ("Zelle to SSFCU LOC"). */
+  /* Which account a payment line is aimed at: "AMEX EPAYMENT" -> Amex -> your
+     one Amex card. "CAPITAL ONE MOBILE PMT" fits two cards, so it stays
+     unmatched rather than guessed. */
+  function payTarget(t) {
+    const g = guessAccount(t.desc || '');
+    if (!g || g === 'Unassigned' || accounts[g]) return g;
+    return aliasOf(g) || g;
+  }
+  // The card's own statement already shows this payment (same amount, within 5 days)
+  function cardSideTwin(card, t) {
+    const amt = Math.abs(t.amount);
+    return transactions.some(c => c !== t && c.xfer && (c.acct || 'Unassigned') === card &&
+      Math.abs(Math.abs(c.amount) - amt) < 0.005 && daysApart(c.date, t.date) <= 5);
+  }
+
   function balanceDetail(name) {
     const info = accounts[name] || {};
     const start = Number(info.balance) || 0;
@@ -1838,12 +1855,14 @@ tailwind.config = {
       const mine = (t.acct || 'Unassigned') === name;
 
       if (t.xfer) {
-        if (!(mine || guessAccount(t.desc) === name)) return;
+        if (!(mine || payTarget(t) === name)) return;
         /* On a bank, a plus amount left the account and a minus came in.
-           On a card, a payment always brings the balance down. */
+           On a card, a payment always brings the balance down, once: a payment
+           pasted from the bank AND from the card statement counts one time. */
         if (isBank) {
           if (t.amount < 0) inflow += Math.abs(t.amount); else outflow += Math.abs(t.amount);
         } else {
+          if (!mine && cardSideTwin(name, t)) return;
           inflow += Math.abs(t.amount);               // payment against the card
         }
         return;
@@ -2185,7 +2204,7 @@ tailwind.config = {
     const today = todayISO();
     const hits = transactions.filter(t =>
       t.xfer && t.date >= since && t.date <= today && !isIssuerCredit(t.desc) &&
-      ((t.acct || 'Unassigned') === name || guessAccount(t.desc) === name));
+      ((t.acct || 'Unassigned') === name || (payTarget(t) === name && !cardSideTwin(name, t))));
     if (!hits.length) return null;
     hits.sort((a, b) => b.date.localeCompare(a.date));
     return { date: hits[0].date, total: hits.reduce((s, t) => s + Math.abs(t.amount), 0) };
@@ -2229,7 +2248,22 @@ tailwind.config = {
 
   function renderAccounts(list) {
     const box = $('acctList'), map = accountsIn(list);
-    const names = Object.keys(map).sort((a, b) => map[b].out - map[a].out);
+    const active = Object.keys(map);                       // had entries this month
+    /* Every account you've set up shows every month, even before it has a
+       charge. A card also shows payments you made to it from the bank this
+       month ("CAPITAL ONE ... PMT" on Frost), matched the same way the
+       balance itself matches them. */
+    Object.keys(accounts).forEach(n => { if (!map[n]) map[n] = { out: 0, in: 0, paid: 0, n: 0 }; });
+    list.forEach(t => {
+      if (!t.xfer) return;
+      const target = payTarget(t);
+      if (target && target !== (t.acct || 'Unassigned') && map[target] && isCardAcct(target) && !cardSideTwin(target, t)) {
+        map[target].paid += Math.abs(t.amount);
+        map[target].fromBank = (map[target].fromBank || 0) + 1;
+      }
+    });
+    const names = Object.keys(map).sort((a, b) =>
+      (map[b].n > 0) - (map[a].n > 0) || map[b].out - map[a].out || a.localeCompare(b));
 
     if (!names.length) {
       box.innerHTML = `<p class="px-4 py-6 text-[14px] text-muted text-center">Nothing logged in ${esc(monthShort(viewMonth))}.</p>`;
@@ -2241,13 +2275,13 @@ tailwind.config = {
             <span class="text-[16px] font-medium truncate flex-1">${esc(n)}</span>
             <span class="num text-[16px] font-semibold shrink-0">${money(map[n].out)}</span>
           </div>
-          <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n} entr${map[n].n === 1 ? 'y' : 'ies'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · <span class="font-semibold" style="color:#4F93D6">' + money(map[n].paid) + ' paid</span>' : ''}${owedLabel(n)}</p>
+          <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n ? map[n].n + ' entr' + (map[n].n === 1 ? 'y' : 'ies') : 'No charges yet'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · <span class="font-semibold" style="color:#4F93D6">' + money(map[n].paid) + ' paid</span>' : ''}${owedLabel(n)}</p>
           ${dueStrip(n)}${utilStrip(n)}${bankStrip(n, map[n])}
         </button>`).join('');
     }
 
-    const chips = ['All'].concat(names);
-    if (!names.includes(acctFilter)) acctFilter = 'All';
+    const chips = ['All'].concat(names.filter(n => active.includes(n)));   // filter by accounts with rows
+    if (!chips.includes(acctFilter)) acctFilter = 'All';
     $('acctChips').innerHTML = chips.length > 1 ? chips.map(c => `
       <button data-chip="${esc(c)}" class="shrink-0 flex items-center gap-1.5 px-3 h-8 rounded-full text-[13px] font-medium border ${c === acctFilter ? 'text-white' : 'bg-card border-line text-muted'}"
         style="${c === acctFilter ? 'background:' + (c === 'All' ? '#2A3541' : acctColor(c)) + ';border-color:' + (c === 'All' ? '#2A3541' : acctColor(c)) : ''}">
@@ -3542,7 +3576,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-09-30 · 70';
+  const BUILD = '2026-10-01 · 71';
 
   /* =============================================================
      KEEPING THE DATA
