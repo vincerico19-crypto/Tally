@@ -1764,6 +1764,32 @@ tailwind.config = {
 
   function isCardAcct(n) { return acctIcon(n) === 'card'; }
 
+  /* Your order for accounts, used on Home, in Cards and in the pickers.
+     Change it with the arrows in the Cards tab. Accounts not in the list
+     follow: banks first, then cards, A to Z. */
+  const DEFAULT_ACCT_ORDER = ['Frost Bank', 'Capital One Venture X', 'Capital One Savor', 'Amex Blue Cash Preferred'];
+  function acctOrder() {
+    return Array.isArray(settings.acctOrder) && settings.acctOrder.length ? settings.acctOrder : DEFAULT_ACCT_ORDER;
+  }
+  function acctRank(n) {
+    const i = acctOrder().indexOf(n);
+    if (i >= 0) return i;
+    if (n === 'Unassigned') return 9999;
+    return isCardAcct(n) ? 2000 : 1000;
+  }
+  function sortAccts(names) {
+    return names.slice().sort((a, b) => acctRank(a) - acctRank(b) || a.localeCompare(b));
+  }
+  function moveAcct(name, step) {
+    const all = sortAccts(Array.from(new Set(Object.keys(accounts).concat(acctOrder())))
+      .filter(n => n && n !== 'Unassigned' && (accounts[n] || transactions.some(t => t.acct === n))));
+    const i = all.indexOf(name), j = i + step;
+    if (i < 0 || j < 0 || j >= all.length) return;
+    [all[i], all[j]] = [all[j], all[i]];
+    settings.acctOrder = all;
+    save(); render();
+  }
+
   function accountsIn(list) {
     const map = {};
     list.forEach(t => {
@@ -2262,8 +2288,7 @@ tailwind.config = {
         map[target].fromBank = (map[target].fromBank || 0) + 1;
       }
     });
-    const names = Object.keys(map).sort((a, b) =>
-      (map[b].n > 0) - (map[a].n > 0) || map[b].out - map[a].out || a.localeCompare(b));
+    const names = sortAccts(Object.keys(map));
 
     if (!names.length) {
       box.innerHTML = `<p class="px-4 py-6 text-[14px] text-muted text-center">Nothing logged in ${esc(monthShort(viewMonth))}.</p>`;
@@ -3042,6 +3067,8 @@ tailwind.config = {
       delete accounts[acctDetail];
     }
     if (settings.primaryAcct === acctDetail) settings.primaryAcct = name;
+    // A renamed account keeps its place in your order
+    settings.acctOrder = Array.from(new Set(acctOrder().map(x => x === acctDetail ? name : x)));
     acctDetail = name;
     if (acctFilter !== 'All') acctFilter = name;
     save(); refreshCatOptions(); render(); renderAcctSheet();
@@ -3576,7 +3603,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-10-01 · 71';
+  const BUILD = '2026-10-01 · 72';
 
   /* =============================================================
      KEEPING THE DATA
@@ -3620,9 +3647,9 @@ tailwind.config = {
 
   // Every account you use, with its balance and limit in one place.
   function renderBalances() {
-    const names = Array.from(new Set(
+    const names = sortAccts(Array.from(new Set(
       Object.keys(accounts).concat(transactions.map(t => t.acct || 'Unassigned'))
-    )).filter(n => n && n !== 'Unassigned').sort();
+    )).filter(n => n && n !== 'Unassigned'));
 
     if (!names.length) {
       $('balancesList').innerHTML = '<p class="text-[13px] text-muted">No accounts yet. They appear here once you paste something.</p>';
@@ -3641,6 +3668,12 @@ tailwind.config = {
           <span class="shrink-0 grid place-items-center rounded-[.5rem]" style="width:24px;height:24px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 14)}</span>
           <span class="text-[14px] font-medium truncate flex-1">${esc(n)}</span>
           ${lim > 0 ? `<span class="num text-[12px] shrink-0" style="color:${col}">${Math.round(pct)}% used</span>` : ''}
+<button data-moveacct="${esc(n)}" data-step="-1" aria-label="Move ${esc(n)} up" class="shrink-0 w-8 h-8 -my-1 grid place-items-center rounded-full text-muted active:bg-line">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>
+          </button>
+          <button data-moveacct="${esc(n)}" data-step="1" aria-label="Move ${esc(n)} down" class="shrink-0 w-8 h-8 -my-1 grid place-items-center rounded-full text-muted active:bg-line">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
           <button data-delacct="${esc(n)}" aria-label="Delete ${esc(n)}" class="shrink-0 w-8 h-8 -my-1 -mr-1 grid place-items-center rounded-full text-muted active:bg-line">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
           </button>
@@ -3686,12 +3719,15 @@ tailwind.config = {
     let moved = 0;
     transactions.forEach(t => { if ((t.acct || 'Unassigned') === name) { t.acct = to; moved++; } });
     delete accounts[name];
+    settings.acctOrder = acctOrder().filter(x => x !== name);
     if (settings.primaryAcct === name) settings.primaryAcct = '';
     if (acctFilter === name) acctFilter = 'All';
     save(); render(); refreshCatOptions();
     return moved;
   }
   $('balancesList').addEventListener('click', function (e) {
+    const mv = e.target.closest('[data-moveacct]');
+    if (mv) { moveAcct(mv.getAttribute('data-moveacct'), Number(mv.getAttribute('data-step'))); return; }
     const del = e.target.closest('[data-delacct]');
     if (del) {
       const n = del.getAttribute('data-delacct');
@@ -3732,9 +3768,9 @@ tailwind.config = {
   // Paying a card is one movement with two ends. Logging it here writes the
   // transaction, so the card and the account it came from both move.
   function renderPayPickers() {
-    const all = Array.from(new Set(
+    const all = sortAccts(Array.from(new Set(
       Object.keys(accounts).concat(transactions.map(t => t.acct || 'Unassigned'))
-    )).filter(n => n && n !== 'Unassigned').sort();
+    )).filter(n => n && n !== 'Unassigned'));
     const cards = all.filter(n => acctIcon(n) !== 'bank' && acctIcon(n) !== 'vault');
     const banks = all.filter(n => acctIcon(n) === 'bank' || acctIcon(n) === 'vault');
     const keepCard = $('payCard').value, keepFrom = $('payFrom').value;
