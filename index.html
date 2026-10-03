@@ -1720,7 +1720,7 @@ tailwind.config = {
     renderHero(cash, owed, bankNames.length, cardNames.length);
     renderNudge();
     $('reviewCardTitle').textContent = 'Review ' + monthShort(reviewMonthKey()).split(' ')[0];
-    if ($('reviewSheet').dataset.open === 'true') renderReview();
+    if ($('reviewSheet').dataset.open === 'true') renderMonthReview();
     if (flowDetail) renderFlow();
     $('homeIn').textContent = money(income);
     $('homeSpent').textContent = money(spent);
@@ -2561,8 +2561,8 @@ tailwind.config = {
     return lines.join('\n');
   }
 
-  function openReview() { renderReview(); openSheet($('reviewSheet')); }
-  function renderReview() {
+  function openReview() { renderMonthReview(); openSheet($('reviewSheet')); }
+  function renderMonthReview() {
     const r = analyzeMonth(reviewMonthKey());
     const name = monthShort(r.mk).split(' ')[0];
     const green = r.gap >= 0;
@@ -3795,7 +3795,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-10-03 · 76';
+  const BUILD = '2026-10-03 · 77';
 
   /* =============================================================
      KEEPING THE DATA
