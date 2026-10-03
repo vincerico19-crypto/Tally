@@ -251,10 +251,10 @@ tailwind.config = {
 <nav class="fixed bottom-0 inset-x-0 z-20 bg-[#131A21]/95 backdrop-blur border-t border-line pt-1.5 safe-b" aria-label="Tabs">
   <div class="max-w-xl mx-auto flex items-start">
     <button id="tab-home" data-tab="home" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="text-[10px] font-semibold">Home</span></button>
-    <button id="tab-activity" data-tab="activity" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="text-[10px] font-semibold">Activity</span></button>
-    <div class="flex-1 flex justify-center"><button id="openPaste" aria-label="Add transactions" class="w-[52px] h-[52px] -mt-4 rounded-full bg-accent text-white grid place-items-center shadow-lg active:opacity-80"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
-    <button id="tab-cards" data-tab="cards" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="text-[10px] font-semibold">Cards</span></button>
     <button id="tab-spending" data-tab="spending" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg><span class="text-[10px] font-semibold">Spending</span></button>
+    <div class="flex-1 flex justify-center"><button id="openPaste" aria-label="Add transactions" class="w-[52px] h-[52px] -mt-4 rounded-full bg-accent text-white grid place-items-center shadow-lg active:opacity-80"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <button id="tab-activity" data-tab="activity" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="text-[10px] font-semibold">Activity</span></button>
+    <button id="tab-cards" data-tab="cards" class="tabbtn flex-1 h-12 flex flex-col items-center justify-center gap-0.5 text-muted active:opacity-60"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="text-[10px] font-semibold">Cards</span></button>
   </div>
 </nav>
 
@@ -2454,7 +2454,12 @@ tailwind.config = {
       </div>`;
     const all = `<div class="px-5 pt-4 pb-1"><p class="text-[15px] font-bold tracking-tight">${isIn ? 'Every deposit' : 'Every purchase'}</p></div>
       ${sorted.map(t => flowRow(t, col)).join('')}`;
-    $('flowSheetBody').innerHTML = stats + middle + all;
+    const more = isIn ? '' : `<div class="px-5 py-5">
+        <button data-gospending class="w-full h-12 rounded-xl bg-page border border-line text-[15px] font-semibold flex items-center justify-center gap-1.5 active:bg-line">
+          See all spending
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button></div>`;
+    $('flowSheetBody').innerHTML = stats + middle + all + more;
   }
 
   function openCatSheet(name) {
@@ -2886,6 +2891,7 @@ tailwind.config = {
   // Money in / Spent tiles open their detail sheet
   document.querySelectorAll('[data-flow]').forEach(b => b.addEventListener('click', () => openFlow(b.getAttribute('data-flow'))));
   $('flowSheetBody').addEventListener('click', function (e) {
+    if (e.target.closest('[data-gospending]')) { closeSheets(); showTab('spending'); return; }
     const c = e.target.closest('[data-flowcat]');
     if (c) { const name = c.getAttribute('data-flowcat'); $('flowSheet').dataset.open = 'false'; flowDetail = null; openCatSheet(name); return; }
     const row = e.target.closest('[data-edit]');
@@ -3603,7 +3609,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-10-02 · 74';
+  const BUILD = '2026-10-02 · 75';
 
   /* =============================================================
      KEEPING THE DATA
