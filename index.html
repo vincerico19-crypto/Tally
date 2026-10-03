@@ -87,6 +87,7 @@ tailwind.config = {
 <div id="menuScrim" class="hidden fixed inset-0 z-30"></div>
 <div id="menuPop" role="menu" aria-label="More options" class="menu-pop fixed z-40 right-3 w-[248px] rounded-2xl border border-line bg-[#1B232C]/95 backdrop-blur-xl shadow-2xl overflow-hidden" data-open="false">
   <div class="p-1.5">
+    <button role="menuitem" data-menu="review" class="menu-item"><span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span>Review last month</button>
     <button role="menuitem" data-menu="search" class="menu-item"><span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>Search transactions</button>
     <button role="menuitem" data-menu="logone" class="menu-item"><span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>Log a transaction</button>
   </div>
@@ -104,6 +105,14 @@ tailwind.config = {
 
 <main class="px-4 pb-32 pt-4 max-w-xl mx-auto">
 <div id="panel-home">
+  <div id="logNudge" class="hidden mb-3 rounded-2xl border border-line bg-card px-4 py-3 flex items-center gap-3">
+    <span class="w-9 h-9 rounded-xl grid place-items-center shrink-0" style="background:#3A2E17;color:#E9B45A">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-6 6c0 6-3 7-3 7h18s-3-1-3-7a6 6 0 0 0-6-6M10 20a2 2 0 0 0 4 0"/></svg>
+    </span>
+    <p class="flex-1 text-[14px] leading-snug">Nothing logged today. Add today's spending?</p>
+    <button id="nudgeAdd" class="h-9 px-3 rounded-lg bg-accent text-white text-[13px] font-semibold active:opacity-80">Add</button>
+    <button id="nudgeLater" aria-label="Not today" class="w-8 h-8 grid place-items-center rounded-full text-muted active:bg-line"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
   <section id="homeHero" class="px-1 pt-1 pb-1">
     <p class="text-[13px] font-semibold text-muted">Truly yours</p>
     <p id="heroNet" class="num text-[42px] leading-tight font-bold tracking-tight">—</p>
@@ -111,6 +120,13 @@ tailwind.config = {
     <div id="heroBar" class="hidden mt-3.5 h-3.5 rounded-full overflow-hidden flex gap-[3px]"></div>
     <div id="heroBarLbl" class="hidden mt-1.5 justify-between text-[12px] text-muted num"></div>
   </section>
+  <button id="reviewCard" class="mt-3 w-full text-left rounded-2xl border border-line bg-card px-4 py-3.5 flex items-center gap-3 active:bg-line">
+    <span class="w-10 h-10 rounded-xl grid place-items-center shrink-0" style="background:#173A2F;color:#35C08A">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>
+    </span>
+    <span class="flex-1 min-w-0"><span id="reviewCardTitle" class="block text-[15px] font-semibold">Review last month</span><span class="block text-[13px] text-muted">Where to save to get back in the green</span></span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93A1AE" stroke-width="2.2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>
+  </button>
 <section class="mt-4">
     <h2 class="text-[15px] font-bold tracking-tight px-1 mb-2 flex items-center gap-1.5"><span id="acctHeadIcon"></span>By card and account</h2>
     <div id="acctList" class="bg-card rounded-2xl border border-line divide-y divide-line overflow-hidden"></div>
@@ -349,6 +365,16 @@ tailwind.config = {
     <div id="catSheetHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
   </div>
   <div id="catSheetBody" class="flex-1 overflow-y-auto hide-scroll"></div>
+  <div class="safe-b shrink-0"></div>
+</div>
+
+<!-- ============ MONTH REVIEW SHEET ============ -->
+<div id="reviewSheet" data-open="false" class="sheet fixed inset-x-0 bottom-0 z-40 bg-card rounded-t-3xl border-t border-line h-[92vh] flex flex-col">
+  <div class="grab shrink-0 pt-3 pb-2 flex justify-center touch-none cursor-grab" role="button" aria-label="Close"><span class="block w-11 h-[5px] rounded-full bg-white/30"></span></div>
+  <div class="sheet-head px-5 pt-1 pb-3 border-b border-line flex items-center gap-3 shrink-0">
+    <div id="reviewHead" class="flex items-center gap-3 min-w-0 flex-1"></div>
+  </div>
+  <div id="reviewBody" class="flex-1 overflow-y-auto hide-scroll"></div>
   <div class="safe-b shrink-0"></div>
 </div>
 
@@ -1692,6 +1718,9 @@ tailwind.config = {
     }
 
     renderHero(cash, owed, bankNames.length, cardNames.length);
+    renderNudge();
+    $('reviewCardTitle').textContent = 'Review ' + monthShort(reviewMonthKey()).split(' ')[0];
+    if ($('reviewSheet').dataset.open === 'true') renderReview();
     if (flowDetail) renderFlow();
     $('homeIn').textContent = money(income);
     $('homeSpent').textContent = money(spent);
@@ -2462,6 +2491,151 @@ tailwind.config = {
     $('flowSheetBody').innerHTML = stats + middle + all + more;
   }
 
+  /* =============================================================
+     MONTH REVIEW: where the money went and a plan to get in the green.
+     Same money-in / spent math as Home. Fixed bills are never "cuts".
+     ============================================================= */
+  const FIXED_CATS = /^(rent|housing|mortgage|insurance|utilities|bills|phone|internet|childcare|medical|health|taxes?|income|transfer|debt & fees)$/i;
+  const DINING_CATS = /dining|restaurant|fast ?food|coffee|takeout|food & drink/i;
+  function reviewMonthKey() {
+    const cur = monthKey(new Date());
+    return viewMonth === cur ? shiftMonth(cur, -1) : viewMonth;
+  }
+  function recurringFor(mk) {
+    const keep = viewMonth; viewMonth = mk;
+    try { return findRecurring().filter(r => r.landed); } finally { viewMonth = keep; }
+  }
+  function analyzeMonth(mk) {
+    const rows = transactions.filter(t => t.date.slice(0, 7) === mk);
+    const spendRows = rows.filter(t => !t.xfer && t.amount > 0);
+    const deposits = rows.filter(t => !t.xfer && t.amount < 0).reduce((a, t) => a + Math.abs(t.amount), 0);
+    const setIncome = incomeFor(mk);
+    const moneyIn = setIncome + (settings.countDeposits ? deposits : 0);
+    const spent = spendRows.reduce((a, t) => a + t.amount, 0);
+    const moved = rows.filter(t => t.xfer).reduce((a, t) => a + Math.abs(t.amount), 0);
+    const prev = shiftMonth(mk, -1);
+    const prevByCat = {};
+    transactions.forEach(t => { if (t.date.slice(0, 7) === prev && !t.xfer && t.amount > 0) prevByCat[t.cat] = (prevByCat[t.cat] || 0) + t.amount; });
+    const byCat = {};
+    spendRows.forEach(t => { const c = byCat[t.cat] = byCat[t.cat] || { name: t.cat, total: 0, n: 0 }; c.total += t.amount; c.n++; });
+    const cats = Object.values(byCat).sort((a, b) => b.total - a.total)
+      .map(c => Object.assign(c, { prev: prevByCat[c.name] || 0 }));
+    const byMerchant = {};
+    spendRows.forEach(t => { const k = merchantKey(t.desc) || t.desc; const m = byMerchant[k] = byMerchant[k] || { name: t.desc, total: 0, n: 0, cat: t.cat }; m.total += t.amount; m.n++; });
+    const frequent = Object.values(byMerchant).filter(m => m.n >= 4).sort((a, b) => b.total - a.total).slice(0, 5);
+    const repeats = recurringFor(mk).filter(r => !FIXED_CATS.test(r.cat));
+    const fees = cats.filter(c => /debt|fee|interest/i.test(c.name)).reduce((a, c) => a + c.total, 0);
+    const dining = cats.filter(c => DINING_CATS.test(c.name));
+    const diningTotal = dining.reduce((a, c) => a + c.total, 0), diningN = dining.reduce((a, c) => a + c.n, 0);
+
+    const plan = [];
+    if (fees > 0) plan.push({ save: fees, title: 'Avoid fees and interest', note: money(fees) + ' last month. Paying statement balances in full stops most of it.' });
+    if (diningTotal > 0 && diningN >= 6) plan.push({ save: diningTotal / 3, title: 'Skip 1 in 3 meals out', note: diningN + ' visits, about ' + money(diningTotal / diningN) + ' each.' });
+    if (repeats.length) {
+      const amts = repeats.map(r => r.typical).sort((a, b) => a - b);
+      plan.push({ save: amts[0], title: 'Cancel one repeat charge you don\u2019t use',
+        note: repeats.length + ' repeat charges, ' + money(amts[0]) + '\u2013' + money(amts[amts.length - 1]) + ' each: ' + repeats.slice(0, 4).map(r => r.name).join(', ') + (repeats.length > 4 ? '\u2026' : '') + '.' });
+    }
+    cats.filter(c => !FIXED_CATS.test(c.name) && !DINING_CATS.test(c.name) && !/subscription/i.test(c.name) && c.total >= 50)
+      .slice(0, 2).forEach(c => plan.push({ save: c.total * 0.10, title: 'Trim ' + c.name + ' by 10%', note: money(c.total) + ' across ' + c.n + ' purchase' + (c.n === 1 ? '' : 's') + '.' }));
+    const potential = plan.reduce((a, x) => a + x.save, 0);
+    return { mk, rows, spendRows, deposits, setIncome, moneyIn, spent, moved, gap: moneyIn - spent, cats, frequent, repeats, fees, plan, potential };
+  }
+
+  function reviewText(r) {
+    const name = monthShort(r.mk);
+    const lines = [];
+    lines.push('My Tally summary for ' + name + ' (from my own budget app):');
+    lines.push('- Money in: ' + money(r.moneyIn) + (r.setIncome ? ' (expected income ' + money(r.setIncome) + ', deposits ' + money(r.deposits) + ')' : ''));
+    lines.push('- Spent: ' + money(r.spent) + ' \u2192 ' + (r.gap >= 0 ? 'in the green by ' : 'short by ') + money(Math.abs(r.gap)));
+    lines.push('- Card payments & transfers (not spending): ' + money(r.moved));
+    lines.push('Top categories: ' + r.cats.slice(0, 6).map(c => c.name + ' ' + money(c.total) + ' (' + c.n + 'x' + (c.prev ? ', ' + (c.total >= c.prev ? '+' : '\u2212') + money(Math.abs(c.total - c.prev)) + ' vs month before' : '') + ')').join('; '));
+    if (r.repeats.length) lines.push('Repeat charges: ' + r.repeats.map(x => x.name + ' ~' + money(x.typical)).join('; '));
+    if (r.frequent.length) lines.push('Frequent buys: ' + r.frequent.map(m => m.name + ' ' + m.n + 'x ' + money(m.total)).join('; '));
+    if (r.fees) lines.push('Fees/interest: ' + money(r.fees));
+    const owed = Object.keys(accounts).filter(isCardAcct).map(n => n + ' ' + money(balanceDetail(n).now));
+    if (owed.length) lines.push('Owed on cards now: ' + owed.join('; '));
+    const cash = Object.keys(accounts).filter(n => !isCardAcct(n)).map(n => n + ' ' + money(balanceDetail(n).now));
+    if (cash.length) lines.push('Cash now: ' + cash.join('; '));
+    lines.push('Help me find realistic ways to spend less and get back in the green next month.');
+    return lines.join('\n');
+  }
+
+  function openReview() { renderReview(); openSheet($('reviewSheet')); }
+  function renderReview() {
+    const r = analyzeMonth(reviewMonthKey());
+    const name = monthShort(r.mk).split(' ')[0];
+    const green = r.gap >= 0;
+    $('reviewHead').innerHTML = `<div class="w-10 h-10 rounded-xl grid place-items-center shrink-0" style="background:#173A2F;color:#35C08A">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></div>
+      <div class="min-w-0"><h3 class="text-[17px] font-semibold">${esc(name)} review</h3><p class="text-[13px] text-muted">${r.spendRows.length} purchases · ${esc(monthShort(r.mk))}</p></div>`;
+    if (!r.rows.length) {
+      $('reviewBody').innerHTML = `<p class="px-5 py-10 text-center text-[14px] text-muted">Nothing logged for ${esc(monthShort(r.mk))} yet.</p>`;
+      return;
+    }
+    const sec = (t, inner, sub) => `<div class="px-5 pt-5 pb-1 flex items-baseline justify-between"><p class="text-[15px] font-bold tracking-tight">${t}</p>${sub ? `<span class="text-[12px] text-muted">${sub}</span>` : ''}</div>${inner}`;
+    const noIncome = !r.moneyIn;
+    const short = Math.abs(r.gap);
+    let verdict;
+    if (noIncome) verdict = `No income logged for ${esc(name)}. Paste your paychecks or set Monthly income (\u22ef \u2192 Budget &amp; settings) to see the gap.`;
+    else if (green) verdict = `You finished <b class="text-income">${money(short)} in the green</b>. The plan below would add about ${money(r.potential)} a month on top.`;
+    else if (r.potential >= short) verdict = `You were <b class="text-over">${money(short)} short</b>. This plan frees about <b>${money(r.potential)}</b> a month, enough to finish in the green.`;
+    else verdict = `You were <b class="text-over">${money(short)} short</b>. This plan frees about <b>${money(r.potential)}</b> a month; closing the last ${money(short - r.potential)} needs a deeper cut in your top category or more income.`;
+
+    const summary = `<div class="px-5 pt-4 pb-4 border-b border-line">
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="rounded-xl bg-page border border-line px-3.5 py-3"><p class="text-[12px] text-muted">Money in</p><p class="num text-[18px] font-bold mt-0.5 text-income">${money(r.moneyIn)}</p></div>
+          <div class="rounded-xl bg-page border border-line px-3.5 py-3"><p class="text-[12px] text-muted">Spent</p><p class="num text-[18px] font-bold mt-0.5">${money(r.spent)}</p></div>
+        </div>
+        <p class="text-[14px] leading-relaxed mt-3.5">${verdict}</p>
+        <p class="text-[12px] text-muted mt-1.5">Card payments and transfers (${money(r.moved)}) are money moved, so they're left out.</p>
+      </div>`;
+    const plan = r.plan.length ? `<div class="pb-2 border-b border-line">${r.plan.map((x, i) => `
+        <div class="px-5 py-3 flex items-start gap-3">
+          <span class="num w-6 h-6 rounded-full grid place-items-center shrink-0 text-[12px] font-bold mt-0.5" style="background:#173A2F;color:#35C08A">${i + 1}</span>
+          <div class="flex-1 min-w-0"><p class="text-[15px] font-semibold">${esc(x.title)}</p><p class="text-[13px] text-muted mt-0.5 leading-snug">${esc(x.note)}</p></div>
+          <span class="num text-[15px] font-semibold text-income shrink-0">+${money(x.save)}</span>
+        </div>`).join('')}
+        <div class="px-5 pt-1 pb-3 flex justify-between text-[14px]"><span class="text-muted">About a month</span><span class="num font-bold text-income">+${money(r.potential)}</span></div></div>`
+      : `<p class="px-5 pb-4 text-[13px] text-muted border-b border-line">Not enough repeat or flexible spending to suggest cuts yet.</p>`;
+    const top = r.cats.slice(0, 6);
+    const cats = `<div class="pb-2 border-b border-line">${top.map(c => {
+        const st = catStyle(c.name), d = c.total - c.prev;
+        const chg = c.prev ? `<span class="num text-[12px] ${d > 0 ? 'text-over' : 'text-income'}">${d > 0 ? '\u2191' : '\u2193'} ${money(Math.abs(d))}</span>` : `<span class="text-[12px] text-muted">new</span>`;
+        return `<div class="px-5 py-2.5 flex items-center gap-3">
+          <span class="w-8 h-8 rounded-lg grid place-items-center shrink-0" style="background:${st.color}22">${iconSvg(st.icon, st.color, 16)}</span>
+          <div class="flex-1 min-w-0"><p class="text-[15px] font-medium truncate">${esc(c.name)}</p><p class="text-[12px] text-muted">${c.n} purchase${c.n === 1 ? '' : 's'} · ${sharePct(c.total, r.spent)}</p></div>
+          <div class="text-right"><p class="num text-[15px] font-semibold">${money(c.total)}</p>${chg}</div></div>`; }).join('')}</div>`;
+    const freq = r.frequent.length ? sec('Small, frequent buys', `<div class="pb-2 border-b border-line">${r.frequent.map(m => `
+        <div class="px-5 py-2 flex justify-between text-[14px]"><span class="truncate mr-3">${esc(m.name)} <span class="text-muted">· ${m.n}\u00d7</span></span><span class="num font-semibold">${money(m.total)}</span></div>`).join('')}</div>`) : '';
+    const copy = `<div class="px-5 py-5">
+        <button data-copyreview class="w-full h-12 rounded-xl bg-page border border-line text-[15px] font-semibold flex items-center justify-center gap-2 active:bg-line">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          Copy for Claude</button>
+        <p class="text-[12px] text-muted mt-2 text-center leading-relaxed">Copies a summary (no account numbers) to paste into Claude for a deeper look. These are suggestions from your own numbers, not financial advice.</p>
+      </div>`;
+    $('reviewBody').innerHTML = summary + sec('Your plan', plan, 'per month') + sec('Where it went', cats, 'vs month before') + freq + copy;
+  }
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } finally { ta.remove(); }
+    return Promise.resolve();
+  }
+
+  /* Evening nudge: after 6 pm, if nothing was logged today */
+  const NUDGE_KEY = 'tally.nudge.dismissed';
+  function renderNudge() {
+    const el = $('logNudge'); if (!el) return;
+    let dismissed = '';
+    try { dismissed = localStorage.getItem(NUDGE_KEY) || ''; } catch (e) {}
+    const today = todayISO();
+    const dayOf = ms => { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const loggedToday = transactions.some(t => t.at && dayOf(t.at) === today);
+    const show = new Date().getHours() >= 18 && !loggedToday && dismissed !== today;
+    el.classList.toggle('hidden', !show);
+  }
+
   function openCatSheet(name) {
     catDetail = name;
     renderCatSheet();
@@ -2736,7 +2910,7 @@ tailwind.config = {
   function closeEdit() {
     $('editSheet').dataset.open = 'false';
     editId = null;
-    const other = $('catSheet').dataset.open === 'true' || $('acctSheet').dataset.open === 'true' || $('flowSheet').dataset.open === 'true'
+    const other = $('catSheet').dataset.open === 'true' || $('acctSheet').dataset.open === 'true' || $('flowSheet').dataset.open === 'true' || $('reviewSheet').dataset.open === 'true'
       || $('pasteSheet').dataset.open === 'true' || $('dataSheet').dataset.open === 'true';
     if (!other) {
       $('scrim').classList.add('opacity-0', 'pointer-events-none');
@@ -2869,6 +3043,7 @@ tailwind.config = {
   function closeSheets() {
     $('pasteSheet').dataset.open = 'false'; $('dataSheet').dataset.open = 'false'; $('catSheet').dataset.open = 'false'; $('acctSheet').dataset.open = 'false'; $('editSheet').dataset.open = 'false';
     $('flowSheet').dataset.open = 'false'; flowDetail = null;
+    $('reviewSheet').dataset.open = 'false';
     $('monthSheet').dataset.open = 'false';
     catDetail = null; acctDetail = null; editId = null; monthDetail = null;
     selectMode = false; selected.clear();
@@ -2898,6 +3073,16 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
+  $('reviewCard').onclick = openReview;
+  $('reviewBody').addEventListener('click', function (e) {
+    if (e.target.closest('[data-copyreview]')) {
+      copyText(reviewText(analyzeMonth(reviewMonthKey())))
+        .then(() => toast('Copied. Paste it into Claude'), () => toast('Couldn\u2019t copy. Try again'));
+    }
+  });
+  $('nudgeAdd').onclick = () => { $('openPaste').click(); };
+  $('nudgeLater').onclick = () => { try { localStorage.setItem(NUDGE_KEY, todayISO()); } catch (e) {} renderNudge(); };
+
   /* ⋯ menu in the header */
   function setMenu(open) {
     $('menuPop').dataset.open = open ? 'true' : 'false';
@@ -2913,6 +3098,7 @@ tailwind.config = {
     if (!b) return;
     setMenu(false);
     const k = b.getAttribute('data-menu');
+    if (k === 'review') { openReview(); return; }
     if (k === 'search') { showTab('activity'); setTimeout(() => $('txSearch').focus(), 60); }
     else if (k === 'logone') { $('openPaste').click(); setTimeout(() => $('logOneBtn').click(), 30); }
     else if (k === 'backup') $('exportBtn').click();
@@ -3609,7 +3795,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-10-02 · 75';
+  const BUILD = '2026-10-03 · 76';
 
   /* =============================================================
      KEEPING THE DATA
