@@ -2253,8 +2253,17 @@ tailwind.config = {
   // The payment that covers the coming due date, if one is logged.
   function duePaidBy(name) {
     const info = accounts[name] || {};
-    const start = cycleStart(info);
+    let start = cycleStart(info);
     if (!start) return null;
+    /* Before the next statement closes there is no new bill yet. Until then,
+       the bill that just came due is the one that counts: paid it, you're paid
+       up. (Savor due Oct 4, paid Oct 1: paid until the Nov statement closes.) */
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    if (now < start) {
+      const next = nextDue(info);
+      const prev = new Date(next.getFullYear(), next.getMonth() - 1, next.getDate());
+      start = new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - STATEMENT_GAP_DAYS);
+    }
     const since = iso(start.getFullYear(), start.getMonth() + 1, start.getDate());
     const today = todayISO();
     const hits = transactions.filter(t =>
@@ -3795,7 +3804,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-10-04 · 78';
+  const BUILD = '2026-10-07 · 79';
 
   /* =============================================================
      KEEPING THE DATA
