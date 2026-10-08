@@ -409,6 +409,12 @@ tailwind.config = {
     </div>
     <div class="safe-b"></div>
   </div>
+  <div id="acctAddBar" class="px-4 pt-3 border-t border-line shrink-0 flex gap-2">
+    <button id="acctAddPaste" class="flex-1 h-12 rounded-xl bg-accent text-white text-[15px] font-semibold active:opacity-80 flex items-center justify-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span id="acctAddLabel">Add transactions</span></button>
+    <button id="acctAddOne" class="h-12 px-4 rounded-xl bg-page border border-line text-[15px] font-medium active:bg-line">Log one</button>
+  </div>
   <div id="acctSheetPad" class="safe-b shrink-0"></div>
 </div>
 
@@ -520,6 +526,7 @@ tailwind.config = {
   let catBudgets = {};             // per category: a monthly limit
   let viewMonth = monthKey(new Date());
   let sortDesc = true;
+  let pasteForAcct = null;         // paste opened from an account: every row goes there
   let searchQ = '';                // Activity search box
   let draft = [];                  // rows waiting in the review step
   let draftNotes = [];             // anything the parser wants to warn about
@@ -547,7 +554,9 @@ tailwind.config = {
      real account's balance counts them. "Capital One" fits two cards, so it is
      left alone rather than guessed. */
   function aliasOf(name) {
-    if (!name || name === 'Unassigned' || accounts[name]) return null;
+    if (!name || name === 'Unassigned') return null;
+    const own = accounts[name];
+    if (own && Object.keys(own).some(k => own[k] !== '' && own[k] != null && own[k] !== 0)) return null;  // has its own balance/limit/due
     const want = name.toLowerCase();
     const hits = Object.keys(accounts).filter(a => {
       const low = a.toLowerCase();
@@ -558,6 +567,7 @@ tailwind.config = {
   function mergeAliasAccounts() {
     let moved = 0;
     transactions.forEach(t => { const to = aliasOf(t.acct); if (to) { t.acct = to; moved++; } });
+    Object.keys(accounts).forEach(n => { if (aliasOf(n)) { delete accounts[n]; moved++; } });
     const to = aliasOf(settings.primaryAcct); if (to) { settings.primaryAcct = to; moved++; }
     return moved;
   }
@@ -600,6 +610,11 @@ tailwind.config = {
   function titleCaseAcct(a) {
     const v = String(a || '').trim();
     if (!v) return 'Unassigned';
+    // One of your own accounts, picked from a list: keep it exactly. Without
+    // this, "Amex Blue Cash Preferred" matched the generic "Amex" rule.
+    const own = Object.keys(accounts).concat(transactions.map(t => t.acct))
+      .find(n => n && n.toLowerCase() === v.toLowerCase());
+    if (own) return own;
     for (const [re, name] of ACCT_RULES) if (re.test(v)) return name;   // "cap one" -> "Capital One"
     return titleCase(v);
   }
@@ -844,6 +859,7 @@ tailwind.config = {
     book:    '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v14.5H6.5A1.5 1.5 0 0 0 5 19z"/><path d="M5 19a1.5 1.5 0 0 0 1.5 1.5H19"/><path d="M9 7.5h6"/>',
     paw:     '<ellipse cx="7" cy="8.5" rx="1.9" ry="2.4"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="17" cy="8.5" rx="1.9" ry="2.4"/><path d="M12 12.2c2.6 0 5 2.2 5 4.6 0 1.9-1.6 3-3.4 2.5l-1.6-.5-1.6.5C8.6 19.8 7 18.7 7 16.8c0-2.4 2.4-4.6 5-4.6z"/>',
     gift:    '<path d="M3.5 11.5h17V21h-17z"/><path d="M2.6 7.5h18.8v4H2.6z"/><path d="M12 7.5V21"/><path d="M12 7.5C9.6 7.5 7.6 6.6 7.6 5A1.6 1.6 0 0 1 12 4.2 1.6 1.6 0 0 1 16.4 5c0 1.6-2 2.5-4.4 2.5z"/>',
+    carfix:  '<path d="M3.6 14 5.3 10.3a2 2 0 0 1 1.8-1.2h4.6a2 2 0 0 1 1.8 1.2l1.7 3.7"/><rect x="1.8" y="14" width="15.2" height="4.6" rx="1.4"/><path d="M4.4 18.6v1.6M14.4 18.6v1.6"/><circle cx="5.4" cy="16.3" r=".55"/><circle cx="13.4" cy="16.3" r=".55"/><g transform="translate(12.6 .4) scale(.48)" stroke-width="3.96"><path d="M15.6 3.4a5.2 5.2 0 0 0-6.4 6.7L3 16.3V21h4.7l6.2-6.2a5.2 5.2 0 0 0 6.7-6.4l-3.1 3.1-3.1-.9-.9-3.1z"/></g>',
     wrench:  '<path d="M15.6 3.4a5.2 5.2 0 0 0-6.4 6.7L3 16.3V21h4.7l6.2-6.2a5.2 5.2 0 0 0 6.7-6.4l-3.1 3.1-3.1-.9-.9-3.1z"/>',
     phone:   '<rect x="6.5" y="2.5" width="11" height="19" rx="2.4"/><path d="M10.5 18.5h3"/>',
     bank:    '<path d="M3 10 12 4.2 21 10"/><path d="M5.5 10.5v7M9.8 10.5v7M14.2 10.5v7M18.5 10.5v7"/><path d="M3.2 18.2h17.6"/><path d="M2.6 21h18.8"/>'
@@ -871,7 +887,11 @@ tailwind.config = {
     'Education':      ['#8D80E4', 'book'],
     'Pets':           ['#B79139', 'paw'],
     'Gifts':          ['#CB6590', 'gift'],
-    'Auto':           ['#98A4B2', 'wrench'],
+    'Auto':           ['#8FA9C4', 'carfix'],
+    'Car/Repairs':    ['#8FA9C4', 'carfix'],   // car + wrench, steel blue
+    'Car Repairs':    ['#8FA9C4', 'carfix'],
+    'Car Repair':     ['#8FA9C4', 'carfix'],
+    'Auto Repair':    ['#8FA9C4', 'carfix'],
     'Phone':          ['#4F93D6', 'phone'],
     'Personal Care':  ['#B266A8', 'scissors'],
     'P2P Transfers':  ['#4F93D6', 'swap'],      // Zelle, Venmo, Cash App
@@ -883,11 +903,14 @@ tailwind.config = {
 
   function catStyle(name) {
     if (CAT_STYLE[name]) return { color: CAT_STYLE[name][0], icon: CAT_STYLE[name][1] };
+    if (/\b(car|auto|repairs?|mechanic|tires?|oil change)\b/i.test(name || '')) return { color: '#8FA9C4', icon: 'carfix' };
     let h = 0;
     String(name || '').split('').forEach(ch => { h = (h * 31 + ch.charCodeAt(0)) >>> 0; });
     return { color: SPARE_COLORS[h % SPARE_COLORS.length], icon: 'tag' };
   }
+  const ICON_SCALE = 1.25;                // every icon in the app, one knob
   function iconSvg(key, color, px) {
+    px = Math.round(px * ICON_SCALE);
     return `<svg width="${px}" height="${px}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICONS[key] || ICONS.tag}</svg>`;
   }
   /* A ring around the category icon: how much of the budget is gone.
@@ -898,6 +921,8 @@ tailwind.config = {
   }
   function ringChip(name, pct, ringCol, box) {
     const st = catStyle(name);
+    const inner = Math.round(box * 0.48);
+    box = Math.round(box * ICON_SCALE);
     const r = box / 2 - 3.2;
     const C = 2 * Math.PI * r;
     const len = Math.max(Math.min(pct, 100) / 100 * C, 0.001);
@@ -907,13 +932,14 @@ tailwind.config = {
         <circle cx="${box / 2}" cy="${box / 2}" r="${r}" fill="none" stroke="${ringCol}" stroke-width="3.4" stroke-linecap="round"
           stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" transform="rotate(-90 ${box / 2} ${box / 2})"></circle>
       </svg>
-      ${iconSvg(st.icon, st.color, Math.round(box * 0.48))}
+      ${iconSvg(st.icon, st.color, inner)}
     </span>`;
   }
 
   function catChip(name, box) {
     const st = catStyle(name);
-    return `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:${box}px;height:${box}px;background:${st.color}2E">${iconSvg(st.icon, st.color, Math.round(box * 0.62))}</span>`;
+    const b = Math.round(box * ICON_SCALE);
+    return `<span class="shrink-0 grid place-items-center rounded-[.7rem]" style="width:${b}px;height:${b}px;background:${st.color}2E">${iconSvg(st.icon, st.color, Math.round(box * 0.62))}</span>`;
   }
 
   const CAT_RULES = [
@@ -1625,7 +1651,7 @@ tailwind.config = {
     $('step1Pad').classList.toggle('hidden', n !== 1);
     $('step2').classList.toggle('hidden', n !== 2);
     $('step2').classList.toggle('flex', n === 2);
-    $('pasteTitle').textContent = n === 1 ? 'Paste anything' : 'Check before saving';
+    $('pasteTitle').textContent = n === 1 ? (pasteForAcct ? 'Paste for ' + pasteForAcct : 'Paste anything') : 'Check before saving';
   }
 
   /* =============================================================
@@ -2186,12 +2212,12 @@ tailwind.config = {
     const dt = nextDue(info);
     if (!dt) return '';
     if (duePaidBy(n)) {                            // paid this cycle: no due date shown
-      return `<p class="mt-1.5 pl-[42px]"><span class="text-[12px] font-semibold inline-flex items-center gap-1" style="color:#6FD3A8">
+      return `<p class="mt-1.5 pl-[50px]"><span class="text-[12px] font-semibold inline-flex items-center gap-1" style="color:#6FD3A8">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>Paid this cycle</span></p>`;
     }
     const col = dueColor(dt);
     const soon = daysUntilDue(dt) <= 10;
-    return `<p class="mt-1.5 pl-[42px]">
+    return `<p class="mt-1.5 pl-[50px]">
       <span class="num text-[12px] font-semibold inline-flex items-center gap-1.5 rounded-full px-2 py-0.5"
         style="color:${col};background:${col}${soon ? '26' : '14'}">
         <span class="rounded-full" style="width:5px;height:5px;background:${col}"></span>${esc(dueLabel(dt))}
@@ -2207,7 +2233,7 @@ tailwind.config = {
     const out = (m ? m.out : 0) + (m ? m.paid : 0);
     const span = Math.max(inn + out, 1);
     const now = balanceDetail(n).now;
-    return `<div class="mt-2 pl-[42px] flex items-center gap-2.5">
+    return `<div class="mt-2 pl-[50px] flex items-center gap-2.5">
       <div class="flex-1 h-1.5 rounded-full overflow-hidden flex bg-page">
         <div class="h-full" style="width:${(inn / span * 100).toFixed(1)}%;background:#35C08A"></div>
         <div class="h-full" style="width:${(out / span * 100).toFixed(1)}%;background:#7F98A6"></div>
@@ -2304,7 +2330,7 @@ tailwind.config = {
     const bal = balanceDetail(n).now;
     const pct = Math.min((bal / lim) * 100, 100);
     const col = pct >= 70 ? '#E2614A' : pct >= 30 ? '#D79A2B' : '#2FA383';
-    return `<div class="mt-2 pl-[42px] flex items-center gap-2.5">
+    return `<div class="mt-2 pl-[50px] flex items-center gap-2.5">
       <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:${col}33"><div class="h-full rounded-full" style="width:${pct.toFixed(1)}%;background:${col}"></div></div>
       <span class="num text-[12px] shrink-0" style="color:${col}">${Math.round(pct)}% used · ${money(Math.max(lim - bal, 0)).replace('.00','')} left</span>
     </div>`;
@@ -2334,11 +2360,11 @@ tailwind.config = {
       box.innerHTML = names.map(n => `
         <button class="w-full text-left px-4 py-3 active:bg-page ${n === acctFilter ? 'bg-page/60' : ''}" data-acct="${esc(n)}">
           <div class="flex items-center gap-3">
-            <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 17)}</span>
+            <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:38px;height:38px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 17)}</span>
             <span class="text-[16px] font-medium truncate flex-1">${esc(n)}</span>
             <span class="num text-[16px] font-semibold shrink-0">${money(map[n].out)}</span>
           </div>
-          <p class="text-[13px] text-muted mt-0.5 pl-[42px]">${map[n].n ? map[n].n + ' entr' + (map[n].n === 1 ? 'y' : 'ies') : 'No charges yet'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · <span class="font-semibold" style="color:#4F93D6">' + money(map[n].paid) + ' paid</span>' : ''}${owedLabel(n)}</p>
+          <p class="text-[13px] text-muted mt-0.5 pl-[50px]">${map[n].n ? map[n].n + ' entr' + (map[n].n === 1 ? 'y' : 'ies') : 'No charges yet'}${map[n].in ? ' · ' + money(map[n].in) + ' in' : ''}${map[n].paid ? ' · <span class="font-semibold" style="color:#4F93D6">' + money(map[n].paid) + ' paid</span>' : ''}${owedLabel(n)}</p>
           ${dueStrip(n)}${utilStrip(n)}${bankStrip(n, map[n])}
         </button>`).join('');
     }
@@ -2378,7 +2404,7 @@ tailwind.config = {
             <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
             <svg class="shrink-0 text-muted -mr-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
           </div>
-          <div class="mt-2 flex items-center gap-2.5 pl-[48px]">
+          <div class="mt-2 flex items-center gap-2.5 pl-[58px]">
             <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:${col}33"><div class="h-full rounded-full" style="width:${Math.min(pct, 100).toFixed(1)}%;background:${col}"></div></div>
             <span class="num text-[12px] text-muted shrink-0">${money(c.total).replace('.00', '')} / ${money(cb).replace('.00', '')}</span>
           </div>
@@ -2393,7 +2419,7 @@ tailwind.config = {
           <span class="num text-[15px] font-semibold shrink-0">${money(c.total)}</span>
           <svg class="shrink-0 text-muted" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
         </div>
-        <div class="mt-1.5 flex items-center gap-2.5 pl-[40px]">
+        <div class="mt-1.5 flex items-center gap-2.5 pl-[48px]">
           <div class="flex-1 h-1.5 rounded-full bg-page overflow-hidden"><div class="h-full rounded-full" style="width:${w.toFixed(1)}%;background:${st.color}"></div></div>
           <span class="num text-[12px] text-muted shrink-0">${c.n} · ${Math.round(share)}%</span>
         </div>
@@ -2474,7 +2500,7 @@ tailwind.config = {
         <div class="pb-2 border-b border-line">${cats.map(c => { const st = catStyle(c.name); return `
           <button data-flowcat="${esc(c.name)}" class="w-full text-left px-5 py-2.5 active:bg-page">
             <div class="flex items-center gap-3">
-              <span class="w-8 h-8 rounded-lg grid place-items-center shrink-0" style="background:${st.color}22">${iconSvg(st.icon, st.color, 16)}</span>
+              <span class="w-10 h-10 rounded-xl grid place-items-center shrink-0" style="background:${st.color}22">${iconSvg(st.icon, st.color, 16)}</span>
               <span class="flex-1 min-w-0 text-[15px] font-medium truncate">${esc(c.name)}</span>
               <span class="num text-[15px] font-semibold">${money(c.total)}</span>
             </div>
@@ -2612,7 +2638,7 @@ tailwind.config = {
         const st = catStyle(c.name), d = c.total - c.prev;
         const chg = c.prev ? `<span class="num text-[12px] ${d > 0 ? 'text-over' : 'text-income'}">${d > 0 ? '\u2191' : '\u2193'} ${money(Math.abs(d))}</span>` : `<span class="text-[12px] text-muted">new</span>`;
         return `<div class="px-5 py-2.5 flex items-center gap-3">
-          <span class="w-8 h-8 rounded-lg grid place-items-center shrink-0" style="background:${st.color}22">${iconSvg(st.icon, st.color, 16)}</span>
+          <span class="w-10 h-10 rounded-xl grid place-items-center shrink-0" style="background:${st.color}22">${iconSvg(st.icon, st.color, 16)}</span>
           <div class="flex-1 min-w-0"><p class="text-[15px] font-medium truncate">${esc(c.name)}</p><p class="text-[12px] text-muted">${c.n} purchase${c.n === 1 ? '' : 's'} · ${sharePct(c.total, r.spent)}</p></div>
           <div class="text-right"><p class="num text-[15px] font-semibold">${money(c.total)}</p>${chg}</div></div>`; }).join('')}</div>`;
     const freq = r.frequent.length ? sec('Small, frequent buys', `<div class="pb-2 border-b border-line">${r.frequent.map(m => `
@@ -2779,7 +2805,7 @@ tailwind.config = {
                            : out - inn - paid;                 // change in what you owe
 
     $('acctSheetHead').innerHTML = `
-      <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:36px;height:36px;background:${color}2E">${iconSvg(acctIcon(name), color, 20)}</span>
+      <span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:45px;height:45px;background:${color}2E">${iconSvg(acctIcon(name), color, 20)}</span>
       <div class="min-w-0">
         <p class="text-[16px] font-semibold truncate">${esc(name)}</p>
         <p class="num text-[13px] text-muted">${esc(monthShort(viewMonth))} · ${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}</p>
@@ -2863,7 +2889,7 @@ tailwind.config = {
         ? `<span class="shrink-0 grid place-items-center rounded-full border-2 ${on ? 'bg-accent border-accent' : 'border-line bg-card'}" style="width:26px;height:26px">
              ${on ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : ''}
            </span>`
-        : (t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 17)}</span>` : t.amount < 0 ? catChip('Income', 30) : catChip(t.cat, 30));
+        : (t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:38px;height:38px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 17)}</span>` : t.amount < 0 ? catChip('Income', 30) : catChip(t.cat, 30));
       return `
       <div class="flex items-center gap-3 px-5 py-3 border-b border-line active:bg-page ${on ? 'bg-page/60' : ''}" data-${selectMode ? 'sel' : 'edit'}="${t.id}">
         ${mark}
@@ -2892,7 +2918,7 @@ tailwind.config = {
     editId = id;
     editDir = t.xfer ? 'xfer' : (t.amount < 0 ? 'in' : 'out');
     $('editHead').innerHTML = (editDir === 'xfer'
-      ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:30px;height:30px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 17)}</span>`
+      ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:38px;height:38px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 17)}</span>`
       : catChip(editDir === 'in' ? 'Income' : t.cat, 30)) +
       `<h3 class="text-[16px] font-semibold truncate">Edit transaction</h3>`;
     $('editDate').value = t.date;
@@ -2937,6 +2963,7 @@ tailwind.config = {
     const bar = $('acctSelectBar');
     bar.classList.toggle('hidden', !selectMode);
     $('acctSheetPad').classList.toggle('hidden', selectMode);
+    $('acctAddBar').classList.toggle('hidden', selectMode);
     $('selectAcct').textContent = selectMode ? 'Done' : 'Select';
     $('renameAcct').classList.toggle('hidden', selectMode);
     if (!selectMode) return;
@@ -3032,7 +3059,7 @@ tailwind.config = {
       }
       return head + `
       <div class="flex items-center gap-3 px-4 py-3 active:bg-page" data-edit="${t.id}">
-        ${t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:34px;height:34px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 19)}</span>` : t.amount < 0 ? catChip('Income', 34) : catChip(t.cat, 34)}
+        ${t.xfer ? `<span class="shrink-0 grid place-items-center rounded-[.6rem]" style="width:42px;height:42px;background:#4F93D62E">${iconSvg('payment', '#4F93D6', 19)}</span>` : t.amount < 0 ? catChip('Income', 34) : catChip(t.cat, 34)}
         <div class="min-w-0 flex-1">
           <p class="text-[16px] font-medium truncate">${esc(t.desc)}</p>
           <p class="num text-[13px] text-muted truncate">${t.xfer ? 'Payment' : esc(t.cat)}${t.acct && t.acct !== 'Unassigned' ? ' · ' + esc(t.acct) : ''}</p>
@@ -3055,7 +3082,7 @@ tailwind.config = {
     $('reviewSheet').dataset.open = 'false';
     $('monthSheet').dataset.open = 'false';
     catDetail = null; acctDetail = null; editId = null; monthDetail = null;
-    selectMode = false; selected.clear();
+    selectMode = false; selected.clear(); pasteForAcct = null;
     $('scrim').classList.add('opacity-0', 'pointer-events-none'); document.body.style.overflow = '';
   }
   let toastTimer;
@@ -3131,17 +3158,34 @@ tailwind.config = {
   $('txSearch').addEventListener('input', function () { searchQ = this.value; render(); });
   $('logOneBtn').onclick = function () {
     draft = []; draftNotes = []; draftDupes = [];
-    $('bulkAcct').innerHTML = optionsHtml(knownAccounts(), '', 'Leave as detected');
+    $('bulkAcct').innerHTML = optionsHtml(knownAccounts(), pasteForAcct || '', 'Leave as detected');
     refreshCatOptions();
     showStep(2);
     $('addRowBtn').onclick();
   };
 
+  // From an account's sheet: open the paste screen already set to that account
+  function addForAcct(single) {
+    const name = acctDetail;
+    if (!name) return;
+    closeSheets();
+    pasteForAcct = name === 'Unassigned' ? null : name;
+    $('pasteMsg').classList.add('hidden');
+    $('bulkInput').value = '';
+    refreshCatOptions();
+    showStep(1);
+    openSheet($('pasteSheet'));
+    if (single) setTimeout(() => $('logOneBtn').onclick(), 30);
+    else setTimeout(() => $('bulkInput').focus(), 250);
+  }
+  $('acctAddPaste').onclick = () => addForAcct(false);
+  $('acctAddOne').onclick = () => addForAcct(true);
+
   $('prevMonth').onclick = () => { viewMonth = shiftMonth(viewMonth, -1); render(); syncBudgetField(); renderCatSheet(); renderAcctSheet(); };
   $('nextMonth').onclick = () => { viewMonth = shiftMonth(viewMonth, 1); render(); syncBudgetField(); renderCatSheet(); renderAcctSheet(); };
   $('toggleSort').onclick = function () { sortDesc = !sortDesc; this.textContent = sortDesc ? 'Newest first' : 'Oldest first'; render(); };
 
-  $('openPaste').onclick = () => { $('pasteMsg').classList.add('hidden'); showStep(1); refreshCatOptions(); openSheet($('pasteSheet')); setTimeout(() => $('bulkInput').focus(), 250); };
+  $('openPaste').onclick = () => { pasteForAcct = null; $('pasteMsg').classList.add('hidden'); showStep(1); refreshCatOptions(); openSheet($('pasteSheet')); setTimeout(() => $('bulkInput').focus(), 250); };
   $('openData').onclick = () => { $('setMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); };
   $('editIncome').onclick = () => { $('setMsg').classList.add('hidden'); syncBudgetField(); openSheet($('dataSheet')); setTimeout(() => { $('incomeInput').focus(); $('incomeInput').scrollIntoView({ block: 'center' }); }, 250); };
 
@@ -3236,10 +3280,11 @@ tailwind.config = {
     t.date = $('editDate').value || t.date;
     t.desc = ($('editDesc').value || '').trim() || 'Untitled';
     t.cat = cat;
-    t.acct = titleCaseAcct($('editAcct').value) || 'Unassigned';
+    t.acct = resolveAcct(titleCaseAcct($('editAcct').value)) || 'Unassigned';
     t.xfer = editDir === 'xfer';
     t.amount = editDir === 'in' ? -amt : amt;
     learn(t.desc, cat);                    // remember this merchant's category
+    mergeAliasAccounts();
     save(); refreshOpenSheets(); closeEdit(); toast('Transaction updated');
   };
 
@@ -3439,7 +3484,11 @@ tailwind.config = {
       draftNotes = notes.concat(['Every row here looks like something already saved. Check before saving.']);
     }
     const uniq = Array.from(new Set(rows.map(r => r.acct)));
-    const detected = (uniq.length === 1 && uniq[0] !== 'Unassigned') ? uniq[0] : '';
+    let detected = (uniq.length === 1 && uniq[0] !== 'Unassigned') ? uniq[0] : '';
+    if (pasteForAcct) {                              // opened from this account's sheet
+      detected = pasteForAcct;
+      draft.concat(draftDupes).forEach(r => { r.acct = pasteForAcct; });
+    }
     $('bulkAcct').innerHTML = optionsHtml(knownAccounts(), detected, 'Leave as detected');
     msg.classList.add('hidden');
     refreshCatOptions();
@@ -3450,7 +3499,9 @@ tailwind.config = {
   $('backBtn').onclick = () => { showStep(1); paintClear(); };
 
   $('addRowBtn').onclick = function () {
-    draft.push({ id: uid(), date: todayISO(), desc: '', cat: 'Uncategorized', amount: 0, dir: 'out' });
+    const row = { id: uid(), date: todayISO(), desc: '', cat: 'Uncategorized', amount: 0, dir: 'out' };
+    if (pasteForAcct) row.acct = pasteForAcct;
+    draft.push(row);
     renderReview();
     const inputs = $('reviewList').querySelectorAll('[data-f="desc"]');
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -3804,7 +3855,7 @@ tailwind.config = {
     if (row) openEdit(row.getAttribute('data-edit'));
   });
 
-  const BUILD = '2026-10-07 · 79';
+  const BUILD = '2026-10-07 · 81';
 
   /* =============================================================
      KEEPING THE DATA
@@ -3866,7 +3917,7 @@ tailwind.config = {
       const col = lim > 0 ? (pct >= 70 ? '#E2614A' : pct >= 30 ? '#D79A2B' : '#35C08A') : '#93A1AE';
       return `<div class="rounded-xl border border-line p-2.5">
         <div class="flex items-center gap-2 mb-2">
-          <span class="shrink-0 grid place-items-center rounded-[.5rem]" style="width:24px;height:24px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 14)}</span>
+          <span class="shrink-0 grid place-items-center rounded-[.5rem]" style="width:30px;height:30px;background:${acctColor(n)}2E">${iconSvg(acctIcon(n), acctColor(n), 14)}</span>
           <span class="text-[14px] font-medium truncate flex-1">${esc(n)}</span>
           ${lim > 0 ? `<span class="num text-[12px] shrink-0" style="color:${col}">${Math.round(pct)}% used</span>` : ''}
 <button data-moveacct="${esc(n)}" data-step="-1" aria-label="Move ${esc(n)} up" class="shrink-0 w-8 h-8 -my-1 grid place-items-center rounded-full text-muted active:bg-line">
